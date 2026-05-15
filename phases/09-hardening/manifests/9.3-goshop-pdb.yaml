@@ -1,13 +1,25 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: goshop
+  name: goshop-api
   namespace: default
 spec:
-  # Khi drain node, k8s sẽ KHÔNG cho evict pod nếu sẽ làm available < minAvailable.
-  # Có nghĩa nhất khi replicas >= 2.
   minAvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: goshop
       app.kubernetes.io/instance: goshop
+      app.kubernetes.io/component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: goshop-web
+  namespace: default
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: goshop
+      app.kubernetes.io/instance: goshop
+      app.kubernetes.io/component: web

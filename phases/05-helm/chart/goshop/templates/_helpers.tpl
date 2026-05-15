@@ -1,7 +1,4 @@
-{{/*
-Common labels gắn cho mọi resource.
-Helm best practice: dùng "app.kubernetes.io/*" labels chuẩn.
-*/}}
+{{/* Common labels */}}
 {{- define "goshop.labels" -}}
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
@@ -10,18 +7,28 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
 {{- end }}
 
-{{/*
-Selector labels = subset của common labels.
-Phải IMMUTABLE — đổi sau khi deploy là Helm upgrade fail.
-*/}}
+{{/* Selector labels — IMMUTABLE */}}
 {{- define "goshop.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Tên đầy đủ resource: <release>-<chart>, gắn ngắn lại nếu vượt 63 ký tự (k8s limit).
-*/}}
-{{- define "goshop.fullname" -}}
-{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
+{{/* Full names cho từng component */}}
+{{- define "goshop.api.fullname" -}}
+{{- printf "%s-api" .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{- define "goshop.web.fullname" -}}
+{{- printf "%s-web" .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+
+{{/* Selector cho từng component (label kèm app.kubernetes.io/component) */}}
+{{- define "goshop.api.selectorLabels" -}}
+{{ include "goshop.selectorLabels" . }}
+app.kubernetes.io/component: api
+{{- end }}
+
+{{- define "goshop.web.selectorLabels" -}}
+{{ include "goshop.selectorLabels" . }}
+app.kubernetes.io/component: web
 {{- end }}

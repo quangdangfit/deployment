@@ -1,21 +1,28 @@
-# Application giống Phase 6 nhưng có annotation cho ArgoCD Image Updater.
+# Application với annotation cho ArgoCD Image Updater theo dõi 2 image.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: goshop
   namespace: argocd
   annotations:
-    # Alias: trong các annotation khác viết "goshop" thay vì full image URL
-    argocd-image-updater.argoproj.io/image-list: goshop=ghcr.io/quangdangfit/goshop
-    # Strategy: newest-build = chọn tag theo timestamp build trong registry
-    argocd-image-updater.argoproj.io/goshop.update-strategy: newest-build
-    # Regex: chỉ chấp nhận tag từ master CI (master-a1b2c3d)
-    argocd-image-updater.argoproj.io/goshop.allow-tags: regexp:^master-[0-9a-f]{7}$
-    # Write tag mới vào git, KHÔNG patch Application live (giữ git làm SOT)
+    # 2 alias: "api" + "web", mỗi cái 1 image
+    argocd-image-updater.argoproj.io/image-list: |
+      api=ghcr.io/quangdangfit/goshop,
+      web=ghcr.io/quangdangfit/goshop-web
+    # Strategy chung
+    argocd-image-updater.argoproj.io/api.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/web.update-strategy: newest-build
+    # Regex: chỉ chấp nhận tag CI master (master-a1b2c3d)
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^master-[0-9a-f]{7}$
+    argocd-image-updater.argoproj.io/web.allow-tags: regexp:^master-[0-9a-f]{7}$
+    # Helm parameter path để image-updater biết viết tag vào key nào của values.yaml
+    argocd-image-updater.argoproj.io/api.helm.image-tag: api.image.tag
+    argocd-image-updater.argoproj.io/api.helm.image-name: api.image.repository
+    argocd-image-updater.argoproj.io/web.helm.image-tag: web.image.tag
+    argocd-image-updater.argoproj.io/web.helm.image-name: web.image.repository
+    # Write tag mới vào git
     argocd-image-updater.argoproj.io/write-back-method: git
-    # File chứa key cần update — path tương đối so với source.path của Application
     argocd-image-updater.argoproj.io/write-back-target: helmvalues:./values.yaml
-    # Branch để commit
     argocd-image-updater.argoproj.io/git-branch: main
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -28,10 +35,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-      parameters:
-        - name: image.repository
-          value: ghcr.io/quangdangfit/goshop
-        # KHÔNG set image.tag ở đây — để AIU quản trong values.yaml
+      # KHÔNG set image tag ở đây — Image Updater quản trong values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: default

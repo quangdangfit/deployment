@@ -4,7 +4,6 @@ metadata:
   name: goshop
   namespace: argocd
   finalizers:
-    # Khi xóa Application, ArgoCD cũng xóa resource k8s đã apply.
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
@@ -15,21 +14,21 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        # Bỏ comment dòng dưới khi muốn deploy với prod overlay:
+        # Bỏ comment khi deploy prod:
         # - values-prod.yaml
-      # Inline override (vì image tag chưa cố định trong chart):
+      # Tag cố định "master" — Phase 8 (Image Updater) sẽ tự bump.
       parameters:
-        - name: image.repository
-          value: ghcr.io/quangdangfit/goshop
-        - name: image.tag
+        - name: api.image.tag
+          value: master
+        - name: web.image.tag
           value: master
   destination:
     server: https://kubernetes.default.svc
     namespace: default
   syncPolicy:
     automated:
-      prune: true       # xóa resource khỏi cluster khi xóa khỏi git
-      selfHeal: true    # tự sync khi cluster drift (vd ai đó kubectl edit tay)
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

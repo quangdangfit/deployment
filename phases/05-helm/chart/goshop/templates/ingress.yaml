@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "goshop.fullname" . }}
+  name: {{ .Release.Name }}
   labels: {{- include "goshop.labels" . | nindent 4 }}
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer }}
@@ -20,7 +20,8 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "goshop.fullname" . }}
+                # Ingress trỏ vào FE; FE nginx proxy /api → BE service nội bộ.
+                name: {{ include "goshop.web.fullname" . }}
                 port:
-                  number: {{ .Values.service.httpPort }}
+                  number: {{ .Values.service.web.port }}
 {{- end }}

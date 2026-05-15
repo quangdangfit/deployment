@@ -181,15 +181,10 @@ Phase này (học) → khuyên (a). Trong production tài liệu rõ trong runbo
 
 ### Step 6 — Migrate Phase 5 (goshop chart) sang đọc Secret
 
-Edit `phases/05-helm/chart/goshop/templates/deployment.yaml` — thêm `envFrom` lấy từ Secret `goshop-secrets`, và **bỏ** các trường secret khỏi `configmap.yaml`:
+Goshop secrets chỉ dùng cho **BE** (FE nginx không cần auth_secret/stripe/smtp). Edit `phases/05-helm/chart/goshop/templates/api-deployment.yaml` — thêm `envFrom` lấy từ Secret `goshop-secrets`, và **bỏ** các trường secret khỏi `configmap.yaml`:
 
 ```yaml
-# deployment.yaml — thêm:
-spec:
-  template:
-    spec:
-      containers:
-        - name: goshop
+# api-deployment.yaml — thêm vào spec.template.spec.containers[0]:
           envFrom:
             - secretRef:
                 name: goshop-secrets    # AUTH_SECRET, STRIPE_*, SMTP_*

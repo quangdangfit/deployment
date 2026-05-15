@@ -17,14 +17,18 @@ fi
 echo "==> Linting chart"
 helm lint "$CHART"
 
-echo "==> Installing/upgrading (profile=$PROFILE, image=$GHCR_USER/goshop:$IMAGE_TAG)"
+# Release name PHẢI là "goshop" — FE nginx.conf hardcode upstream "goshop-api".
+# (Chart sinh tên service api = "<release>-api"; release "goshop" → "goshop-api" khớp.)
+echo "==> Installing/upgrading (profile=$PROFILE, tag=$IMAGE_TAG)"
 helm upgrade --install goshop "$CHART" \
   --namespace default --create-namespace \
   "${VALUES_FILES[@]}" \
-  --set image.repository="ghcr.io/$GHCR_USER/goshop" \
-  --set image.tag="$IMAGE_TAG" \
+  --set api.image.repository="ghcr.io/$GHCR_USER/goshop" \
+  --set api.image.tag="$IMAGE_TAG" \
+  --set web.image.repository="ghcr.io/$GHCR_USER/goshop-web" \
+  --set web.image.tag="$IMAGE_TAG" \
   --wait --timeout 5m
 
 echo
 helm -n default list
-kubectl -n default get pods,svc,ingress
+kubectl -n default get pods,svc,ingress -l app.kubernetes.io/name=goshop

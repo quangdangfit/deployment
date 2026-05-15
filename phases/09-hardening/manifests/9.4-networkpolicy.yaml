@@ -1,21 +1,10 @@
-# PRE-REQUIREMENT: CNI hỗ trợ NetworkPolicy. K3s flannel mặc định KHÔNG hỗ trợ.
-# Đổi sang Calico/Cilium trước. Xem README mục 9.4.
+# PRE-REQUIREMENT: CNI hỗ trợ NetworkPolicy (k3s flannel mặc định KHÔNG hỗ trợ).
 ---
-# Default deny ingress trong ns data — chỉ traffic được allow rule khác mới qua được.
+# Cho phép Postgres nhận từ pod component=api (BE)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: default-deny-ingress
-  namespace: data
-spec:
-  podSelector: {}              # match toàn bộ pod trong ns
-  policyTypes: [Ingress]
----
-# Cho phép pod ở ns goshop gọi postgres:5432
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: postgres-allow-from-goshop
+  name: postgres-allow-from-api
   namespace: data
 spec:
   podSelector:
@@ -24,17 +13,17 @@ spec:
   ingress:
     - from:
         - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: default }
+          podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: default
-      ports:
-        - protocol: TCP
-          port: 5432
+              app.kubernetes.io/component: api
+      ports: [{ protocol: TCP, port: 5432 }]
 ---
-# Cho phép pod ở ns goshop gọi redis:6379
+# Tương tự Redis
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: redis-allow-from-goshop
+  name: redis-allow-from-api
   namespace: data
 spec:
   podSelector:
@@ -43,8 +32,24 @@ spec:
   ingress:
     - from:
         - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: default }
+          podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: default
-      ports:
-        - protocol: TCP
-          port: 6379
+              app.kubernetes.io/component: api
+      ports: [{ protocol: TCP, port: 6379 }]
+---
+# BE chỉ nhận traffic từ FE pod (web → api), không nhận trực tiếp từ internet
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow-from-web
+  namespace: default
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/component: api }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/component: web }
+      ports: [{ protocol: TCP, port: 8888 }]

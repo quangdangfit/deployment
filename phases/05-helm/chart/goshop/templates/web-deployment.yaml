@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "goshop.web.fullname" . }}
+  labels: {{- include "goshop.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels: {{- include "goshop.web.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "goshop.web.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          # FE nginx proxy /api → goshop-api service (hardcode tên trong nginx.conf của image).
+          # Vì tên service do helm sinh = "<release>-api", phải set release name = "goshop"
+          # để khớp với nginx.conf (proxy_pass http://goshop-api:8888).
+          resources: {{- toYaml .Values.web.resources | nindent 12 }}
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
