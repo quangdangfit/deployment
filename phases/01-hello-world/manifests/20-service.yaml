@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-nginx
+  namespace: hello-world
+spec:
+  type: NodePort
+  selector:
+    # Phải khớp với labels của pod (xem 10-deployment.yaml).
+    # Nếu sai 1 ký tự, service sẽ rỗng (không có endpoint).
+    app: hello-nginx
+  ports:
+    - name: http
+      port: 80          # port của Service (chỉ dùng nội bộ cluster)
+      targetPort: http  # tên port của container (tham chiếu containerPort.name)
+      nodePort: 30080   # port mở trên VM. Range hợp lệ: 30000-32767.

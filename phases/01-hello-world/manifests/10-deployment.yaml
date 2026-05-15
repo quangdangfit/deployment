@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-nginx
+  namespace: hello-world
+spec:
+  # replicas: số bản sao pod chạy đồng thời
+  replicas: 2
+  selector:
+    # Phải match labels của pod template bên dưới — k8s dùng để biết Deployment này "sở hữu" pod nào
+    matchLabels:
+      app: hello-nginx
+  template:
+    metadata:
+      labels:
+        app: hello-nginx
+    spec:
+      containers:
+        - name: nginx
+          # Pin SHA digest cho reproducibility; image nginx:1.27-alpine cho ARM64 sẵn có
+          image: nginx:1.27-alpine
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            # Best practice: luôn đặt resources requests/limits.
+            # requests = mức tối thiểu k8s GUARANTEED cho pod (dùng để scheduling)
+            # limits   = mức tối đa pod được phép dùng (OOMKill nếu vượt memory)
+            requests:
+              cpu: 10m       # 10 milli-CPU = 1% của 1 core
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          readinessProbe:
+            # k8s gọi probe này để biết pod đã sẵn sàng nhận traffic chưa.
+            # Service KHÔNG route đến pod chưa Ready.
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            # k8s gọi probe này để biết pod còn sống không. Fail = restart container.
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
