@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis
+  namespace: argocd
+spec:
+  project: goshop
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 20.2.1
+    helm:
+      releaseName: redis
+      values: |
+        architecture: standalone
+        auth:
+          enabled: true
+          existingSecret: redis-credentials
+          existingSecretPasswordKey: password
+        master:
+          persistence:
+            storageClass: oci-bv
+            size: 5Gi
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+        replica:
+          replicaCount: 0
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+            additionalLabels:
+              release: kps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: data
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: redis-credentials
+  namespace: data
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: doppler
+    kind: ClusterSecretStore
+  target:
+    name: redis-credentials
+    creationPolicy: Owner
+  data:
+    - secretKey: password
+      remoteRef: { key: REDIS_PASSWORD }

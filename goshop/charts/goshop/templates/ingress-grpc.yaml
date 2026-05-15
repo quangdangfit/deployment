@@ -1,0 +1,26 @@
+{{- if .Values.ingress.grpc.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "goshop.fullname" . }}-grpc
+  labels: {{- include "goshop.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer }}
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts: [{{ .Values.ingress.grpc.host | quote }}]
+      secretName: {{ include "goshop.fullname" . }}-grpc-tls
+  rules:
+    - host: {{ .Values.ingress.grpc.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "goshop.fullname" . }}
+                port:
+                  name: grpc
+{{- end }}

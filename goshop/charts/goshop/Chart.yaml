@@ -1,0 +1,9 @@
+apiVersion: v2
+name: goshop
+description: GoShop API (Gin REST + gRPC) Helm chart
+type: application
+version: 0.1.0
+appVersion: "master"
+maintainers:
+  - name: quangdangfit
+    url: https://github.com/quangdangfit
