@@ -108,9 +108,11 @@ Lần đầu ~10 phút (build cả Go + Node trên 2 arch). Lần sau cache laye
 
 ### Step 4 — Đặt CẢ 2 package public
 
-Sau khi push xong, vào:
-- https://github.com/quangdangfit/goshop/pkgs/container/goshop → settings → public
-- https://github.com/quangdangfit/goshop/pkgs/container/goshop-web → settings → public
+Sau khi push xong, vào package **settings** (URL `/users/...`, KHÔNG phải `/<repo>/pkgs/...` — đó là URL view chỉ có khi package đã link với repo):
+- https://github.com/users/quangdangfit/packages/container/goshop/settings → Danger Zone → Change visibility → Public
+- https://github.com/users/quangdangfit/packages/container/goshop-web/settings → Danger Zone → Change visibility → Public
+
+Hoặc liệt kê tất cả package: https://github.com/quangdangfit?tab=packages
 
 Quên 1 trong 2 → pod đó sẽ `ImagePullBackOff`.
 

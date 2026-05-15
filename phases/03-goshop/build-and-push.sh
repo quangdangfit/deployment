@@ -58,6 +58,6 @@ docker buildx build \
 
 echo
 echo "==> Done. Both images at tag :$TAG"
-echo "    Mark BOTH packages public:"
-echo "    https://github.com/$GHCR_USER/goshop/pkgs/container/goshop"
-echo "    https://github.com/$GHCR_USER/goshop/pkgs/container/goshop-web"
+echo "    Mark BOTH packages public (settings page):"
+echo "    https://github.com/users/$GHCR_USER/packages/container/goshop/settings"
+echo "    https://github.com/users/$GHCR_USER/packages/container/goshop-web/settings"
