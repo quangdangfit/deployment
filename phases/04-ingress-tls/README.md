@@ -174,12 +174,16 @@ kubectl -n default get svc goshop
 # Nếu chưa: quay lại Phase 3
 ```
 
-### Step 8 — Apply Ingress cho goshop
+### Step 8 — Apply Ingress cho goshop (prod issuer)
 
-Đầu tiên dùng **staging** để test (tránh rate limit). Mở `manifests/goshop-ingress.yaml`, đảm bảo annotation:
-```yaml
-cert-manager.io/cluster-issuer: letsencrypt-staging
-```
+`manifests/goshop-ingress.yaml` đã set sẵn `cluster-issuer: letsencrypt-prod`.
+
+> **Cảnh báo rate limit:** Let's Encrypt prod giới hạn **5 cert/domain/tuần**. Nếu apply nhiều lần do cấu hình sai (DNS chưa propagate, Cloudflare proxy còn ON, ingress-nginx chưa Ready), bạn sẽ dính rate limit và phải đợi 1 tuần. Trước khi chạy, **double-check**:
+> - `dig +short goshop.cunghoclaptrinh.online` trả về đúng `$VM_IP`
+> - Cloudflare proxy = **DNS only** (grey cloud)
+> - `curl -I http://goshop.cunghoclaptrinh.online` trả 404 từ nginx (ingress đã bắt được host)
+>
+> Nếu lo lắng / chưa chắc: tạm dùng `cluster-issuer: letsencrypt-staging` để debug (cert không hợp lệ với browser nhưng rate limit cao), khi OK đổi sang `letsencrypt-prod`.
 
 ```bash
 ./apply-goshop-ingress.sh
@@ -189,42 +193,27 @@ Theo dõi:
 ```bash
 kubectl -n default get certificate
 kubectl -n default describe certificate goshop-tls
-# Đợi Ready=True (~30-60s)
+# Đợi Ready=True (~30-90s)
+
+# Nếu stuck, xem challenge:
+kubectl -n default get challenge
+kubectl -n default describe challenge
 ```
 
-Test (cert staging KHÔNG được tin, dùng `-k` để skip verify):
+Verify HTTPS:
 ```bash
-curl -kI https://goshop.cunghoclaptrinh.online/health
-# HTTP/2 200
+curl -I https://goshop.cunghoclaptrinh.online/health
+# HTTP/2 200, không cần -k
 ```
 
-Inspect cert:
+Inspect cert chain:
 ```bash
 echo | openssl s_client -connect goshop.cunghoclaptrinh.online:443 2>/dev/null \
-  | openssl x509 -noout -issuer -subject
-# issuer phải chứa "STAGING" hoặc "Fake"
+  | openssl x509 -noout -issuer -subject -dates
+# issuer phải chứa "Let's Encrypt", KHÔNG có "STAGING"
 ```
 
-### Step 9 — Switch sang prod issuer
-
-Edit `manifests/goshop-ingress.yaml`:
-```yaml
-cert-manager.io/cluster-issuer: letsencrypt-prod
-```
-
-Xóa cert staging cũ để cert-manager xin mới với issuer prod:
-```bash
-kubectl -n default delete secret goshop-tls certificate goshop-tls
-./apply-goshop-ingress.sh
-```
-
-Đợi cert mới Ready, rồi:
-```bash
-curl -I https://goshop.cunghoclaptrinh.online/health   # KHÔNG -k
-# HTTP/2 200, không error
-```
-
-### Step 10 — Bật lại Cloudflare proxy (optional)
+### Step 9 — Bật lại Cloudflare proxy (optional)
 
 Sau khi prod cert có, bạn có thể bật orange cloud nếu muốn benefit Cloudflare (DDoS, caching, …). Cert vẫn ổn vì traffic Cloudflare→VM vẫn HTTPS đến ingress.
 

@@ -4,8 +4,7 @@ metadata:
   name: goshop
   namespace: default
   annotations:
-    # Đổi sang letsencrypt-prod sau khi test với staging OK.
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     # Redirect HTTP → HTTPS tự động ở ingress-nginx.
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
