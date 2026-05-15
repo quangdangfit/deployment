@@ -7,7 +7,7 @@ set -euo pipefail
 : "${GHCR_TOKEN:?export GHCR_TOKEN=<PAT with write:packages>}"
 
 IMAGE="ghcr.io/${GHCR_USER}/goshop"
-TAG="${TAG:-phase3}"
+TAG="${TAG:-master}"
 SRC_DIR="${SRC_DIR:-/tmp/goshop-src}"
 REPO_URL="https://github.com/quangdangfit/goshop.git"
 BRANCH="${BRANCH:-master}"

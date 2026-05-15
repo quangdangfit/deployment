@@ -6,7 +6,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: goshop-config
-  namespace: goshop
+  namespace: default
 data:
   config.yaml: |
     environment: production

@@ -10,11 +10,10 @@ check() {
 }
 
 echo "==> Cluster checks"
-check "namespace goshop exists" kubectl get ns goshop
 check "deployment goshop Available" \
-  kubectl -n goshop wait --for=condition=Available deployment/goshop --timeout=15s
+  kubectl wait --for=condition=Available deployment/goshop --timeout=15s
 check "service goshop has endpoints" \
-  bash -c "test -n \"\$(kubectl -n goshop get endpoints goshop -o jsonpath='{.subsets[0].addresses[0].ip}')\""
+  bash -c "test -n \"\$(kubectl get endpoints goshop -o jsonpath='{.subsets[0].addresses[0].ip}')\""
 
 echo "==> HTTP check"
 code=$(curl -sS -o /dev/null -w '%{http_code}' "http://${VM_IP}:30088/healthz" || echo "000")

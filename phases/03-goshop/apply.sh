@@ -12,14 +12,14 @@ cp -r "$SCRIPT_DIR/manifests" "$TMP/"
 sed -i.bak "s|GHCR_USER_PLACEHOLDER|$GHCR_USER|g" "$TMP/manifests/20-deployment.yaml"
 rm "$TMP/manifests/"*.bak
 
-echo "==> Applying"
+echo "==> Applying to ns=default"
 kubectl apply -f "$TMP/manifests/"
 
 echo "==> Waiting for rollout"
-kubectl -n goshop rollout status deployment/goshop --timeout=180s
+kubectl rollout status deployment/goshop --timeout=180s
 
 echo
-kubectl -n goshop get pods,svc
+kubectl get pods,svc -l app=goshop
 
 echo
 echo "==> Smoke test:"

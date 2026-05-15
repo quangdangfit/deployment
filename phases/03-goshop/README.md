@@ -39,7 +39,7 @@ Phần secrets (auth_secret, stripe keys) cũng nhúng vào file này — Phase 
 
 ### Service Discovery cross-namespace
 
-Pod ở ns `goshop` muốn gọi Service ở ns `data`:
+Pod ở ns `default` muốn gọi Service ở ns `data`:
 ```
 postgres.data.svc.cluster.local   # FQDN
 postgres.data                     # short form, cũng được
@@ -58,8 +58,7 @@ phases/03-goshop/
 ├── README.md
 ├── build-and-push.sh       # clone goshop → buildx → push ghcr.io
 ├── manifests/
-│   ├── 00-namespace.yaml
-│   ├── 10-config.yaml      # ConfigMap chứa config.yaml
+│   ├── 10-config.yaml      # ConfigMap chứa config.yaml (ns: default)
 │   ├── 20-deployment.yaml
 │   └── 30-service.yaml
 ├── apply.sh
@@ -102,7 +101,7 @@ Script này:
 2. `docker login ghcr.io -u $GHCR_USER -p $GHCR_TOKEN`
 3. `docker buildx create --use --name multi-arch` (nếu chưa có)
 4. Cài QEMU emulator: `docker run --rm --privileged tonistiigi/binfmt --install all`
-5. `docker buildx build --platform linux/amd64,linux/arm64 --tag ghcr.io/$GHCR_USER/goshop:phase3 --push .`
+5. `docker buildx build --platform linux/amd64,linux/arm64 --tag ghcr.io/$GHCR_USER/goshop:master --push .`
 
 Lần đầu mất 5-10 phút (compile + emulation ARM). Lần sau cache Docker layer thường <2 phút nếu Dockerfile không thay đổi.
 
@@ -113,7 +112,7 @@ Image vừa push **mặc định private** → k3s không pull được.
 1. Vào https://github.com/quangdangfit/goshop/pkgs/container/goshop
 2. Package settings (cuối trang bên phải) → Change visibility → Public
 
-> Nếu muốn giữ private: phải tạo `imagePullSecret` trong namespace `goshop` và tham chiếu trong `spec.imagePullSecrets`. Để đơn giản: chọn public.
+> Nếu muốn giữ private: phải tạo `imagePullSecret` trong namespace `default` và tham chiếu trong `spec.imagePullSecrets`. Để đơn giản: chọn public.
 
 ### Step 5 — Render config + apply manifest
 
@@ -122,9 +121,9 @@ Image vừa push **mặc định private** → k3s không pull được.
 ```
 
 Script này:
-1. Tạo ns `goshop`
+1. Sử dụng ns `default` (có sẵn, không cần tạo)
 2. Apply ConfigMap (config.yaml đã trỏ sẵn vào `postgres.data` và `redis.data`)
-3. Apply Deployment với image `ghcr.io/$GHCR_USER/goshop:phase3`
+3. Apply Deployment với image `ghcr.io/$GHCR_USER/goshop:master`
 4. Apply Service NodePort 30088
 5. Đợi rollout
 
@@ -135,7 +134,7 @@ Script này:
 curl http://$VM_IP:30088/healthz
 
 # Hoặc port-forward để test mà không cần mở port OCI:
-kubectl -n goshop port-forward svc/goshop 8888:8888
+kubectl port-forward svc/goshop 8888:8888
 # Tab khác:
 curl http://localhost:8888/healthz
 ```
@@ -148,7 +147,7 @@ http://$VM_IP:30088/swagger/index.html
 ### Step 7 — Kiểm tra logs
 
 ```bash
-kubectl -n goshop logs -l app=goshop --tail=50 -f
+kubectl logs -l app=goshop --tail=50 -f
 ```
 
 Nếu thấy error kết nối DB, vào Troubleshooting bên dưới.
@@ -163,18 +162,18 @@ Nếu thấy error kết nối DB, vào Troubleshooting bên dưới.
 
 | Triệu chứng | Lệnh | Fix |
 |---|---|---|
-| `ImagePullBackOff` | `kubectl -n goshop describe pod <pod>` | Image vẫn private (Step 4) hoặc tag không tồn tại |
-| `exec format error` trong log | `kubectl -n goshop logs ...` | Build thiếu arm64 → build lại với `--platform linux/amd64,linux/arm64` |
-| `connection refused` đến postgres | `kubectl -n goshop logs ...` + `kubectl -n data get svc postgres` | Phase 2 chưa apply hoặc DNS sai. Test: `kubectl -n goshop run dnstest --rm -it --image=busybox -- nslookup postgres.data` |
+| `ImagePullBackOff` | `kubectl describe pod <pod>` | Image vẫn private (Step 4) hoặc tag không tồn tại |
+| `exec format error` trong log | `kubectl logs ...` | Build thiếu arm64 → build lại với `--platform linux/amd64,linux/arm64` |
+| `connection refused` đến postgres | `kubectl logs ...` + `kubectl -n data get svc postgres` | Phase 2 chưa apply hoặc DNS sai. Test: `kubectl run dnstest --rm -it --image=busybox -- nslookup postgres.data` |
 | `password authentication failed` | logs | Mật khẩu trong ConfigMap không khớp Secret ở Phase 2 (`goshop_dev`) |
 | App start ok nhưng `/healthz` 404 | `curl ... -v` | Đường dẫn health endpoint khác; thử `/`, `/health`, hoặc `/api/v1/health` |
-| Pod restart liên tục | `kubectl -n goshop describe pod ...` (Events) | livenessProbe quá khắt khe → tăng `initialDelaySeconds` |
-| Migration cần chạy thủ công | `kubectl -n goshop logs ... | grep -i migrat` | Goshop hiện auto-migrate qua GORM khi start, không cần Job riêng. Nếu lỗi, kiểm tra schema trong DB |
+| Pod restart liên tục | `kubectl describe pod ...` (Events) | livenessProbe quá khắt khe → tăng `initialDelaySeconds` |
+| Migration cần chạy thủ công | `kubectl logs ... | grep -i migrat` | Goshop hiện auto-migrate qua GORM khi start, không cần Job riêng. Nếu lỗi, kiểm tra schema trong DB |
 
 ## Cleanup
 
 ```bash
-./teardown.sh   # xoá ns goshop, GIỮ Phase 2 data
+./teardown.sh   # xoá deployment/service/configmap trong ns default, GIỮ Phase 2 data
 ```
 
 ---

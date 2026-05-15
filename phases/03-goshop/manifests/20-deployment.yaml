@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: goshop
-  namespace: goshop
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -17,7 +17,7 @@ spec:
         - name: goshop
           # Image này được build & push bằng phases/03-goshop/build-and-push.sh
           # Replaced bằng `sed` trong apply.sh để inject $GHCR_USER.
-          image: ghcr.io/GHCR_USER_PLACEHOLDER/goshop:phase3
+          image: ghcr.io/GHCR_USER_PLACEHOLDER/goshop:master
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
