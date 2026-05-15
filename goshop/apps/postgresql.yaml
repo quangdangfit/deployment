@@ -12,6 +12,17 @@ spec:
     helm:
       releaseName: postgresql
       values: |
+        global:
+          security:
+            allowInsecureImages: true
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/postgresql
+        volumePermissions:
+          enabled: true
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/os-shell
         auth:
           existingSecret: postgres-credentials
           secretKeys:

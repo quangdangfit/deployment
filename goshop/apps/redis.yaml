@@ -12,6 +12,12 @@ spec:
     helm:
       releaseName: redis
       values: |
+        global:
+          security:
+            allowInsecureImages: true
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/redis
         architecture: standalone
         auth:
           enabled: true
