@@ -9,7 +9,7 @@ image:
 replicaCount: 2
 
 env: prod
-domain: goshop.quangdang.dev
+domain: goshop.cunghoclaptrinh.online
 
 service:
   ports:
@@ -21,10 +21,10 @@ ingress:
   clusterIssuer: letsencrypt-prod
   http:
     enabled: true
-    host: api.goshop.quangdang.dev
+    host: goshop.cunghoclaptrinh.online
   grpc:
     enabled: true
-    host: grpc.goshop.quangdang.dev
+    host: grpc.goshop.cunghoclaptrinh.online
 
 resources:
   requests: { cpu: 100m, memory: 128Mi }
@@ -66,7 +66,7 @@ securityContext:
       drop: [ALL]
 
 serviceMonitor:
-  enabled: true
+  enabled: false
   interval: 30s
   path: /metrics
   port: http

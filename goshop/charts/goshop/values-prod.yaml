@@ -1,2 +1,4 @@
-env: prod
-# All defaults from values.yaml apply.
+# Production overlay. ArgoCD Image Updater writes image.tag/digest here.
+image:
+  repository: ghcr.io/quangdangfit/goshop
+  tag: master
