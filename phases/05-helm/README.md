@@ -18,6 +18,54 @@ App vẫn truy cập được qua `https://goshop.cunghoclaptrinh.online` (chart
 
 ## Kiến thức nền
 
+### Helm là gì?
+
+**Helm** là **package manager cho Kubernetes** — như `apt` cho Ubuntu, `npm` cho Node, `brew` cho macOS, nhưng cho k8s.
+
+Đơn vị package gọi là **chart** — một thư mục chứa **template YAML** + **file values mặc định**. Khi cài, helm render template với values rồi đẩy ra `kubectl apply` thay cho bạn.
+
+```
+[chart/]  ──helm install──>  [rendered YAML]  ──kubectl apply──>  [k8s resources]
+   ▲                              ▲
+   │                              │ values.yaml ghi đè
+   │
+   templates/*.yaml chứa {{ .Values.xxx }}
+```
+
+### Vấn đề Helm giải quyết
+
+Không có Helm, deploy 1 app vừa = vừa nghĩa đầy đủ trên k8s cần **5-15 file YAML** (ns, deployment, service, ingress, configmap, secret, hpa, pdb, networkpolicy, …). Vấn đề phát sinh:
+
+| Vấn đề | Không Helm | Có Helm |
+|---|---|---|
+| **Lặp code giữa env** | Copy file YAML cho dev/stg/prod, sửa từng giá trị | 1 chart + nhiều `values-<env>.yaml` chỉ ghi đè key khác biệt |
+| **Param hoá runtime** | sed/envsubst/yq hack | `{{ .Values.replicaCount }}` native |
+| **Track app version** | git tag tay | Chart.yaml: `version` (chart) + `appVersion` (app), revision tự đếm |
+| **Rollback** | kubectl rollout undo từng deployment lẻ tẻ | `helm rollback <release> <revision>` — 1 lệnh revert hết |
+| **Uninstall sạch** | nhớ xóa tất cả resource bằng tay | `helm uninstall` — xóa hết resource thuộc release |
+| **Dependency** | Tự apply postgres trước app | `dependencies:` trong Chart.yaml, helm pull + install theo thứ tự |
+| **Cài chart bên thứ 3** | Tìm/copy YAML, sửa, apply | `helm install ingress-nginx ingress-nginx/ingress-nginx` — Phase 4 đã làm |
+| **Share giữa team** | Truyền file qua chat | Helm repo (artifacthub, OCI registry) — pull bằng URL |
+
+### Khái niệm cốt lõi
+
+- **Chart** — thư mục `chart/<name>/` chứa Chart.yaml + templates + values
+- **Release** — 1 instance chart đã cài (`helm install <release-name> <chart>`). Cùng chart có thể cài nhiều release với release name khác nhau (vd `goshop-dev`, `goshop-staging`)
+- **Revision** — mỗi lần `helm upgrade` tăng 1; rollback theo số revision
+- **Repository** — server lưu nhiều chart (https://kubernetes.github.io/ingress-nginx, https://charts.jetstack.io, …)
+
+### Khi nào KHÔNG cần Helm
+
+- Cluster cá nhân, 1-2 resource đơn giản — `kubectl apply -f` đủ
+- Manifest cực ngắn và không bao giờ deploy multi-env
+- Bạn dùng Kustomize (overlay-based, không template) thay vì Helm
+
+→ Goshop có ~7 manifest × 2 env (dev/prod) → Helm thắng rõ rệt.
+
+### Helm 3 vs Helm 2
+
+Helm 2 có server-side component `Tiller` (cài trong cluster, mang cluster-admin) — bị rủi ro bảo mật. **Helm 3 (current)**: client-only, state lưu trong Secret ở chính ns của release, không cần Tiller. Tài liệu cũ đề cập Tiller = lỗi thời.
+
 ### Chart structure
 
 ```
