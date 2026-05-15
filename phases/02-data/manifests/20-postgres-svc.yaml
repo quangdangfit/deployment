@@ -1,0 +1,19 @@
+# Headless Service: clusterIP: None
+# → DNS `postgres.data.svc.cluster.local` resolve về IP của từng pod (chỉ có 1 ở phase này).
+# → Pod-specific DNS: `postgres-0.postgres.data.svc.cluster.local`.
+# Headless là yêu cầu bắt buộc khi StatefulSet (.spec.serviceName) tham chiếu.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: data
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

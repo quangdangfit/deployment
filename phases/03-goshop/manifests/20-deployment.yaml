@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goshop
+  namespace: goshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goshop
+  template:
+    metadata:
+      labels:
+        app: goshop
+    spec:
+      containers:
+        - name: goshop
+          # Image này được build & push bằng phases/03-goshop/build-and-push.sh
+          # Replaced bằng `sed` trong apply.sh để inject $GHCR_USER.
+          image: ghcr.io/GHCR_USER_PLACEHOLDER/goshop:phase3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8888
+            - name: grpc
+              containerPort: 8889
+          volumeMounts:
+            # Dockerfile ENTRYPOINT chạy với WORKDIR /app, app đọc ./config.yaml.
+            # Mount key config.yaml của ConfigMap vào file /app/config.yaml.
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          env:
+            # Một số runtime cần CONFIG_FILE; cũng dùng làm fallback nếu app tìm sai path.
+            - name: CONFIG_FILE
+              value: /app/config.yaml
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: goshop-config

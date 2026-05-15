@@ -1,0 +1,38 @@
+# Toàn bộ config app gom vào 1 ConfigMap. Mật khẩu DB nằm thẳng trong file —
+# CHẤP NHẬN ở phase này vì là dev/learning. Phase 7 sẽ tách secrets sang ExternalSecret.
+#
+# DSN dùng DNS service: postgres.data.svc.cluster.local (= "postgres.data" gọn hơn).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: goshop-config
+  namespace: goshop
+data:
+  config.yaml: |
+    environment: production
+    http_port: 8888
+    grpc_port: 8889
+    auth_secret: change-me-phase3-jwt-secret
+
+    database_uri: postgres://goshop:goshop_dev@postgres.data:5432/goshop?sslmode=disable
+
+    redis_uri: redis.data:6379
+    redis_password: redis_dev
+    redis_db: 0
+
+    cors_allowed_origins: "*"
+    rate_limit_requests: 100
+    rate_limit_window_seconds: 60
+
+    # Stripe (dummy — payments sẽ không hoạt động thật, nhưng app start ok)
+    stripe_secret_key: sk_test_dummy
+    stripe_webhook_secret: whsec_dummy
+    stripe_publishable_key: pk_test_dummy
+    stripe_api_base:
+
+    # SMTP (dummy — gửi email sẽ fail nhưng app start ok)
+    smtp_host:
+    smtp_port: 25
+    smtp_user:
+    smtp_password:
+    email_from: no-reply@goshop.local

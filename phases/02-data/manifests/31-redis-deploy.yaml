@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          # --requirepass: bật auth, lấy password từ env REDIS_PASSWORD (inject từ Secret bên dưới).
+          # --maxmemory + maxmemory-policy: giới hạn RAM, evict LRU khi đầy (vì dùng làm cache).
+          command:
+            - sh
+            - -c
+            - |
+              exec redis-server \
+                --requirepass "$REDIS_PASSWORD" \
+                --maxmemory 200mb \
+                --maxmemory-policy allkeys-lru \
+                --save ""
+          ports:
+            - name: redis
+              containerPort: 6379
+          envFrom:
+            - secretRef:
+                name: redis-credentials
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" PING | grep PONG"]
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" PING | grep PONG"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
