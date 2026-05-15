@@ -60,7 +60,7 @@ spec:
       valueFiles: [values.yaml, values-prod.yaml]
   destination:
     server: https://kubernetes.default.svc
-    namespace: goshop
+    namespace: default
   syncPolicy:
     automated:
       prune: true       # xóa resource khi xóa trong git
@@ -96,7 +96,7 @@ Phase này chưa cần. Phase 9 (hardening) khi có nhiều app sẽ dùng patte
 | `latest` / `master` | đơn giản, luôn mới | KHÔNG immutable → ArgoCD không phát hiện đổi (cluster đã pull rồi) → cần Image Updater |
 | `<sha>` hoặc `<semver>` | immutable, ArgoCD detect khi values.yaml đổi | phải bump bằng tay hoặc CI |
 
-Phase 6 dùng tag cố định (`phase5`). Phase 8 add ArgoCD Image Updater để tự bump tag khi có image mới.
+Phase 6 dùng tag cố định (`master`). Phase 8 add ArgoCD Image Updater để tự bump tag khi có image mới.
 
 ## Layout file
 
@@ -169,7 +169,7 @@ Nếu private: thêm credential trong ArgoCD:
 
 ArgoCD sẽ "adopt" chart, nhưng để tránh conflict ownership:
 ```bash
-helm -n goshop uninstall goshop || true
+helm -n default uninstall goshop || true
 # Đừng xóa ns goshop, ArgoCD sẽ tái sinh resource bên trong
 ```
 
@@ -210,7 +210,7 @@ kubectl -n argocd patch app goshop --type merge -p '{"operation":{"sync":{}}}'
 
 Verify:
 ```bash
-kubectl -n goshop get pods   # phải thấy 2 pod
+kubectl -n default get pods   # phải thấy 2 pod
 ```
 
 ### Step 8 — Chuyển sang prod values

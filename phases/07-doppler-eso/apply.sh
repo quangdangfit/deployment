@@ -29,4 +29,4 @@ done
 echo "==> Status"
 kubectl get clustersecretstore doppler
 kubectl -n data get externalsecret
-kubectl -n goshop get externalsecret
+kubectl -n default get externalsecret

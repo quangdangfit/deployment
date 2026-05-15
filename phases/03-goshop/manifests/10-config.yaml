@@ -12,7 +12,7 @@ data:
     environment: production
     http_port: 8888
     grpc_port: 8889
-    auth_secret: change-me-phase3-jwt-secret
+    auth_secret: change-me-dev-jwt-secret
 
     database_uri: postgres://goshop:goshop_dev@postgres.data:5432/goshop?sslmode=disable
 

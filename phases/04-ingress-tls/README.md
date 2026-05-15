@@ -170,7 +170,7 @@ dig +short goshop.cunghoclaptrinh.online
 ### Step 7 — Đảm bảo goshop đã chạy (Phase 3)
 
 ```bash
-kubectl -n goshop get svc goshop
+kubectl -n default get svc goshop
 # Nếu chưa: quay lại Phase 3
 ```
 
@@ -187,8 +187,8 @@ cert-manager.io/cluster-issuer: letsencrypt-staging
 
 Theo dõi:
 ```bash
-kubectl -n goshop get certificate
-kubectl -n goshop describe certificate goshop-tls
+kubectl -n default get certificate
+kubectl -n default describe certificate goshop-tls
 # Đợi Ready=True (~30-60s)
 ```
 
@@ -214,7 +214,7 @@ cert-manager.io/cluster-issuer: letsencrypt-prod
 
 Xóa cert staging cũ để cert-manager xin mới với issuer prod:
 ```bash
-kubectl -n goshop delete secret goshop-tls certificate goshop-tls
+kubectl -n default delete secret goshop-tls certificate goshop-tls
 ./apply-goshop-ingress.sh
 ```
 
@@ -244,10 +244,10 @@ Check:
 
 | Triệu chứng | Lệnh | Fix |
 |---|---|---|
-| Certificate stuck `False` | `kubectl -n goshop describe challenge` | Thường: Cloudflare proxy ON, hoặc DNS chưa propagate, hoặc port 80 chưa mở |
+| Certificate stuck `False` | `kubectl -n default describe challenge` | Thường: Cloudflare proxy ON, hoặc DNS chưa propagate, hoặc port 80 chưa mở |
 | `acme: error: 429: ... rate limit` | (log cert-manager) | Bị rate limit prod. Đợi 1 tuần hoặc dùng staging |
 | `connection refused` khi curl :80 | `kubectl -n ingress-nginx get pod -o wide` + `ssh ... ss -tlnp \| grep :80` | hostNetwork không bind. Xác minh DaemonSet pod Ready trên node |
-| `404 default backend` khi curl đúng domain | `kubectl -n goshop describe ingress goshop` | host/path không khớp, hoặc service backend sai tên |
+| `404 default backend` khi curl đúng domain | `kubectl -n default describe ingress goshop` | host/path không khớp, hoặc service backend sai tên |
 | Browser warning về cert | `openssl s_client ...` | Có thể cert vẫn staging — đảm bảo đã chuyển sang `letsencrypt-prod` |
 
 ## Cleanup

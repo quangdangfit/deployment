@@ -22,10 +22,10 @@ spec:
         - name: image.repository
           value: ghcr.io/quangdangfit/goshop
         - name: image.tag
-          value: phase5
+          value: master
   destination:
     server: https://kubernetes.default.svc
-    namespace: goshop
+    namespace: default
   syncPolicy:
     automated:
       prune: true       # xóa resource khỏi cluster khi xóa khỏi git

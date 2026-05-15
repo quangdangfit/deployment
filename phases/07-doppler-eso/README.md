@@ -12,11 +12,11 @@ Phase này:
 
 **Đầu ra mong đợi:**
 ```bash
-$ kubectl -n goshop get externalsecret
+$ kubectl -n default get externalsecret
 NAME            STORE      REFRESH INTERVAL   STATUS         READY
 goshop-secrets  doppler    1h                 SecretSynced   True
 
-$ kubectl -n goshop get secret goshop-secrets
+$ kubectl -n default get secret goshop-secrets
 # Tự động sinh, KHÔNG nằm trong git
 ```
 
@@ -155,7 +155,7 @@ Verify:
 ```bash
 kubectl get clustersecretstore
 kubectl -n data get externalsecret,secret
-kubectl -n goshop get externalsecret,secret
+kubectl -n default get externalsecret,secret
 ```
 
 Mong đợi: ExternalSecret `Ready=True`, Secret tương ứng đã tồn tại.

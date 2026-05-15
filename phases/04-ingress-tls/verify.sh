@@ -14,7 +14,7 @@ check "ClusterIssuer letsencrypt-prod Ready" \
 
 echo "==> Certificate"
 check "Certificate goshop-tls Ready" \
-  kubectl -n goshop wait --for=condition=Ready certificate/goshop-tls --timeout=10s
+  kubectl -n default wait --for=condition=Ready certificate/goshop-tls --timeout=10s
 
 echo "==> HTTPS"
 code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/healthz" || echo 000)

@@ -3,7 +3,7 @@
 set -euo pipefail
 : "${KUBECONFIG:?export KUBECONFIG=\$HOME/.kube/k3s-goshop.yaml}"
 : "${GHCR_USER:=quangdangfit}"
-: "${IMAGE_TAG:=phase5}"
+: "${IMAGE_TAG:=master}"
 
 PROFILE="${1:-dev}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,12 +19,12 @@ helm lint "$CHART"
 
 echo "==> Installing/upgrading (profile=$PROFILE, image=$GHCR_USER/goshop:$IMAGE_TAG)"
 helm upgrade --install goshop "$CHART" \
-  --namespace goshop --create-namespace \
+  --namespace default --create-namespace \
   "${VALUES_FILES[@]}" \
   --set image.repository="ghcr.io/$GHCR_USER/goshop" \
   --set image.tag="$IMAGE_TAG" \
   --wait --timeout 5m
 
 echo
-helm -n goshop list
-kubectl -n goshop get pods,svc,ingress
+helm -n default list
+kubectl -n default get pods,svc,ingress

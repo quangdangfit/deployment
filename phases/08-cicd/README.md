@@ -36,7 +36,7 @@ ArgoCD reconcile: sync goshop Application → rolling deploy
 | `<short-sha>` (vd `a1b2c3d`) | ✅ | Immutable, k8s detect thay đổi khi tag string khác |
 | `v1.2.3` (semver) | ✅ | Cho release chính thức, kèm tag git |
 
-Phase 3 dùng `phase3` cố định (chỉ học). Phase 8 dùng **`master-<sha>`** — tự sinh bởi GitHub Action.
+Phase 3-7 dùng tag `master` cố định (chỉ học). Phase 8 dùng **`master-<sha>`** — tự sinh bởi GitHub Action.
 
 ### GitHub Actions cơ bản
 

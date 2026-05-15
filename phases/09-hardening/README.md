@@ -80,7 +80,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: goshop
-  namespace: goshop
+  namespace: default
 spec:
   scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: goshop }
   minReplicas: 2
@@ -97,7 +97,7 @@ K3s đã bundle metrics-server (verify `kubectl top nodes`). Nếu chưa thì HP
 Apply:
 ```bash
 kubectl apply -f manifests/9.2-goshop-hpa.yaml
-kubectl -n goshop get hpa goshop -w
+kubectl -n default get hpa goshop -w
 ```
 
 → Phase 9 nên đặt HPA vào chart goshop (template `hpa.yaml` có condition `if .Values.hpa.enabled`).
@@ -147,7 +147,7 @@ spec:
   ingress:
     - from:
         - namespaceSelector:
-            matchLabels: { kubernetes.io/metadata.name: goshop }
+            matchLabels: { kubernetes.io/metadata.name: default }
       ports:
         - protocol: TCP
           port: 5432

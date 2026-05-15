@@ -3,9 +3,9 @@ set -euo pipefail
 : "${KUBECONFIG:?export KUBECONFIG=\$HOME/.kube/k3s-goshop.yaml}"
 
 # Chỉ rút Ingress + Certificate của goshop. Giữ ingress-nginx + cert-manager để Phase sau dùng.
-kubectl -n goshop delete ingress goshop --ignore-not-found
-kubectl -n goshop delete certificate goshop-tls --ignore-not-found
-kubectl -n goshop delete secret goshop-tls --ignore-not-found
+kubectl -n default delete ingress goshop --ignore-not-found
+kubectl -n default delete certificate goshop-tls --ignore-not-found
+kubectl -n default delete secret goshop-tls --ignore-not-found
 kubectl delete clusterissuer letsencrypt-staging letsencrypt-prod --ignore-not-found
 
 echo "==> To uninstall platform charts:"

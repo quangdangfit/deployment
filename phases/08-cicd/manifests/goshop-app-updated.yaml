@@ -34,7 +34,7 @@ spec:
         # KHÔNG set image.tag ở đây — để AIU quản trong values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: goshop
+    namespace: default
   syncPolicy:
     automated:
       prune: true
