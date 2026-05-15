@@ -1,0 +1,54 @@
+# Default profile = dev. Prod overlay: values-prod.yaml.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/quangdangfit/goshop
+  tag: ""               # empty → fallback Chart.appVersion
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP        # ClusterIP vì Phase 4 dùng Ingress; KHÔNG cần NodePort nữa
+  httpPort: 8888
+  grpcPort: 8889
+
+ingress:
+  enabled: true
+  className: nginx
+  clusterIssuer: letsencrypt-staging      # dev = staging; prod overlay sẽ đổi
+  host: goshop.cunghoclaptrinh.online
+  tlsSecretName: goshop-tls
+
+# Toàn bộ config app. Phase 7 sẽ tách secrets sang ExternalSecret.
+config:
+  environment: production
+  authSecret: change-me-helm-jwt-secret
+  database:
+    uri: postgres://goshop:goshop_dev@postgres.data:5432/goshop?sslmode=disable
+  redis:
+    uri: redis.data:6379
+    password: redis_dev
+    db: 0
+  cors:
+    allowedOrigins: "*"
+  rateLimit:
+    requests: 100
+    windowSeconds: 60
+  stripe:
+    secretKey: sk_test_dummy
+    webhookSecret: whsec_dummy
+    publishableKey: pk_test_dummy
+  smtp:
+    host: ""
+    port: 25
+    user: ""
+    password: ""
+    emailFrom: no-reply@goshop.local
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

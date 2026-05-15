@@ -1,0 +1,10 @@
+# Overlay cho prod — chỉ ghi đè key cần khác default.
+replicaCount: 2
+
+ingress:
+  clusterIssuer: letsencrypt-prod
+
+# Khi vào prod, đổi authSecret để không cùng giá trị với dev.
+# Phase 7 sẽ chuyển hẳn sang Doppler/ExternalSecret nên giá trị ở đây tạm thời.
+config:
+  authSecret: change-me-prod-strong-secret

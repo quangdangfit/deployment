@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: goshop
+  namespace: goshop
+  annotations:
+    # Đổi sang letsencrypt-prod sau khi test với staging OK.
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    # Redirect HTTP → HTTPS tự động ở ingress-nginx.
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [goshop.cunghoclaptrinh.online]
+      # cert-manager sẽ tạo Secret này với cert + key.
+      secretName: goshop-tls
+  rules:
+    - host: goshop.cunghoclaptrinh.online
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: goshop
+                port:
+                  number: 8888

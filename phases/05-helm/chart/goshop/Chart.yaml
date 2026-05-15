@@ -1,0 +1,8 @@
+apiVersion: v2
+name: goshop
+description: GoShop e-commerce app
+type: application
+# Chart version: tăng mỗi khi sửa template/values (semver chart, độc lập app version)
+version: 0.1.0
+# App version: bám theo tag image goshop
+appVersion: "phase5"
