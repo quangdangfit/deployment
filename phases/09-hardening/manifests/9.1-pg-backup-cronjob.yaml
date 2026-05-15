@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup
+  namespace: data
+spec:
+  # 02:00 UTC mỗi ngày = 09:00 ICT
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid       # không chạy chồng nếu lần trước chưa xong
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2             # retry tối đa 2 lần nếu fail
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              # Image có cả pg_dump (Postgres 16) và aws CLI (S3-compatible).
+              image: amazon/aws-cli:2.17.0  # KHÔNG có pg_dump — xem note bên dưới
+              # Sửa thành image custom có cả pg_dump + aws-cli, hoặc 2 containers chia chung volume.
+              env:
+                - name: PGHOST
+                  value: postgres.data
+                - name: PGUSER
+                  valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_USER } }
+                - name: PGPASSWORD
+                  valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD } }
+                - name: PGDATABASE
+                  valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_DB } }
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: { secretKeyRef: { name: s3-backup-creds, key: AWS_ACCESS_KEY_ID } }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: { secretKeyRef: { name: s3-backup-creds, key: AWS_SECRET_ACCESS_KEY } }
+                - name: S3_ENDPOINT
+                  valueFrom: { secretKeyRef: { name: s3-backup-creds, key: S3_ENDPOINT } }
+                - name: S3_BUCKET
+                  valueFrom: { secretKeyRef: { name: s3-backup-creds, key: S3_BUCKET } }
+              command:
+                - sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TS=$(date -u +%Y%m%dT%H%M%SZ)
+                  KEY="goshop/pg-${TS}.sql.gz"
+                  # NOTE: image phải có pg_dump. Build custom image dựa trên postgres:16-alpine + curl awscli.
+                  pg_dump --no-owner --no-privileges | gzip > /tmp/dump.sql.gz
+                  aws --endpoint-url "$S3_ENDPOINT" s3 cp /tmp/dump.sql.gz "s3://$S3_BUCKET/$KEY"
+                  echo "Uploaded $KEY"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi

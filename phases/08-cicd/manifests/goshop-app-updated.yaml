@@ -1,0 +1,44 @@
+# Application giống Phase 6 nhưng có annotation cho ArgoCD Image Updater.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: goshop
+  namespace: argocd
+  annotations:
+    # Alias: trong các annotation khác viết "goshop" thay vì full image URL
+    argocd-image-updater.argoproj.io/image-list: goshop=ghcr.io/quangdangfit/goshop
+    # Strategy: newest-build = chọn tag theo timestamp build trong registry
+    argocd-image-updater.argoproj.io/goshop.update-strategy: newest-build
+    # Regex: chỉ chấp nhận tag từ master CI (master-a1b2c3d)
+    argocd-image-updater.argoproj.io/goshop.allow-tags: regexp:^master-[0-9a-f]{7}$
+    # Write tag mới vào git, KHÔNG patch Application live (giữ git làm SOT)
+    argocd-image-updater.argoproj.io/write-back-method: git
+    # File chứa key cần update — path tương đối so với source.path của Application
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:./values.yaml
+    # Branch để commit
+    argocd-image-updater.argoproj.io/git-branch: main
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/quangdangfit/deployment
+    targetRevision: main
+    path: phases/05-helm/chart/goshop
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: image.repository
+          value: ghcr.io/quangdangfit/goshop
+        # KHÔNG set image.tag ở đây — để AIU quản trong values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: goshop
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,50 @@
+# PRE-REQUIREMENT: CNI hỗ trợ NetworkPolicy. K3s flannel mặc định KHÔNG hỗ trợ.
+# Đổi sang Calico/Cilium trước. Xem README mục 9.4.
+---
+# Default deny ingress trong ns data — chỉ traffic được allow rule khác mới qua được.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: data
+spec:
+  podSelector: {}              # match toàn bộ pod trong ns
+  policyTypes: [Ingress]
+---
+# Cho phép pod ở ns goshop gọi postgres:5432
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-allow-from-goshop
+  namespace: data
+spec:
+  podSelector:
+    matchLabels: { app: postgres }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: goshop
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Cho phép pod ở ns goshop gọi redis:6379
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-allow-from-goshop
+  namespace: data
+spec:
+  podSelector:
+    matchLabels: { app: redis }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: goshop
+      ports:
+        - protocol: TCP
+          port: 6379
