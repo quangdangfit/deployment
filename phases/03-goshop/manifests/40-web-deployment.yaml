@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goshop-web
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goshop-web
+  template:
+    metadata:
+      labels:
+        app: goshop-web
+    spec:
+      containers:
+        - name: web
+          # FE image build từ phases/03-goshop/web/Dockerfile, push bởi build-and-push.sh.
+          # apply.sh sẽ sed GHCR_USER_PLACEHOLDER → $GHCR_USER.
+          image: ghcr.io/GHCR_USER_PLACEHOLDER/goshop-web:master
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10

@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: goshop
+  name: goshop-api
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: goshop
+      app: goshop-api
   template:
     metadata:
       labels:
-        app: goshop
+        app: goshop-api
     spec:
       containers:
-        - name: goshop
+        - name: goshop-api
           # Image này được build & push bằng phases/03-goshop/build-and-push.sh
           # Replaced bằng `sed` trong apply.sh để inject $GHCR_USER.
           image: ghcr.io/GHCR_USER_PLACEHOLDER/goshop:master

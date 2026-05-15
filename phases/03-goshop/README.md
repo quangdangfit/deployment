@@ -1,66 +1,72 @@
-# Phase 3 — Build & Deploy goshop
+# Phase 3 — Build & Deploy goshop (BE + FE)
 
 ## Mục tiêu
 
-Build image goshop **multi-arch** (amd64 + arm64), push lên ghcr.io, deploy lên k8s, kết nối với Postgres + Redis từ Phase 2. Truy cập qua `http://$VM_IP:30088/health`.
+Goshop có **2 phần**:
+- **BE** — Go, `cmd/api`, port HTTP 8888 + gRPC 8889
+- **FE** — React + Vite + Tailwind ở `web/`, build ra static, serve bằng nginx
 
-CHƯA có domain/HTTPS — đó là Phase 4.
+Sau phase này:
+- Build 2 image multi-arch, push ghcr.io
+- BE chạy như **ClusterIP service nội bộ** (không expose ra ngoài)
+- FE chạy với nginx, proxy `/api` → BE, expose qua **NodePort 30088**
+- Truy cập `http://$VM_IP:30088/` thấy UI React; `/health` hoặc `/api/v1/...` đi qua nginx → BE
 
-**Đầu ra mong đợi:**
-```bash
-$ curl http://$VM_IP:30088/health
-{"status":"ok"}   # hoặc tương đương
+```
+Internet
+   │
+   ▼
+NodePort 30088
+   │
+   ▼
+[goshop-web pod: nginx]
+   ├── /            → static files (React SPA)
+   ├── /api/*       → proxy → goshop-api:8888 (BE)
+   ├── /health      → proxy → goshop-api:8888/health
+   └── /swagger/*   → proxy → goshop-api:8888/swagger/
+                                      │
+                                      ▼
+                                [goshop-api pod: Go]
+                                      │
+                                      ├──> postgres.data:5432
+                                      └──> redis.data:6379
 ```
 
 ## Kiến thức nền
 
 ### Tại sao multi-arch?
 
-VM Oracle A1.Flex là **ARM64** (Ampere). Mặc định `docker build` chỉ build cho kiến trúc của máy bạn (vd macOS Intel = amd64, Apple Silicon = arm64). Nếu build sai arch, k3s sẽ báo `exec format error` khi chạy.
+VM Oracle A1.Flex là **ARM64**. Mặc định `docker build` chỉ build cho kiến trúc máy bạn — sai arch sẽ `exec format error`. Dùng `docker buildx` + QEMU build cả `linux/amd64` + `linux/arm64`.
 
-→ Dùng `docker buildx` + QEMU emulation để build cả 2 arch trong 1 lệnh.
+### Tại sao tách BE thành ClusterIP nội bộ?
 
-### Container registry: ghcr.io
+- **Bảo mật:** BE không lộ thẳng port ra ngoài; user chỉ tiếp xúc qua FE/nginx.
+- **CORS:** FE gọi `/api/*` **cùng origin** với chính nó → không cần CORS preflight.
+- **Đơn giản DNS:** chỉ FE cần SSL ở Phase 4; BE giao tiếp qua tên service nội bộ.
 
-- GitHub Container Registry, free cho repo public
-- Auth bằng GitHub Personal Access Token (PAT) với scope `write:packages` HOẶC `GITHUB_TOKEN` trong CI
-- Image path: `ghcr.io/<user>/<repo>:<tag>`
+### Cách FE đọc API base URL
 
-Phase này **build local + push thủ công** để bạn hiểu pipeline. Phase 8 tự động hóa bằng GitHub Actions.
+`vite.config.ts` đã setup proxy dev: `/api → localhost:8888`. Code FE gọi `fetch('/api/...')` (relative). Khi build prod, không có dev server — **nginx** thay vai proxy đó qua `nginx.conf`. Không cần biến môi trường `VITE_API_URL`.
 
-### ConfigMap để chứa config.yaml
+### Cross-namespace Service Discovery
 
-goshop load file `config.yaml` từ working directory (override `CONFIG_FILE=...`). Mình:
-1. Render config.yaml với DSN/Redis URL trỏ đến Service ở namespace `data`
-2. Đưa vào ConfigMap
-3. Mount thành file `/app/config.yaml` trong pod
-
-Phần secrets (auth_secret, stripe keys) cũng nhúng vào file này — Phase 7 sẽ tách secrets ra Secret/ExternalSecret.
-
-### Service Discovery cross-namespace
-
-Pod ở ns `default` muốn gọi Service ở ns `data`:
-```
-postgres.data.svc.cluster.local   # FQDN
-postgres.data                     # short form, cũng được
-```
-
-Trong cùng ns: chỉ cần `postgres`.
-
-### Cách app discover DB qua DNS
-
-Khi pod start, CoreDNS resolve `postgres.data` → ClusterIP của Service → kube-proxy NAT đến pod IP. Pod tự khám phá, không cần hardcode IP.
+FE nginx ở ns `default` proxy đến BE Service `goshop-api` (cùng ns) — chỉ cần tên service. Pod sau (Postgres ở ns `data`) cần FQDN: `postgres.data` hoặc `postgres.data.svc.cluster.local`.
 
 ## Layout file
 
 ```
 phases/03-goshop/
 ├── README.md
-├── build-and-push.sh       # clone goshop → buildx → push ghcr.io
+├── build-and-push.sh           # clone goshop, build BE + FE image, push ghcr.io
+├── web/
+│   ├── Dockerfile              # multi-stage: node build → nginx serve
+│   └── nginx.conf              # SPA fallback + proxy /api → goshop-api
 ├── manifests/
-│   ├── 10-config.yaml      # ConfigMap chứa config.yaml (ns: default)
-│   ├── 20-deployment.yaml
-│   └── 30-service.yaml
+│   ├── 10-config.yaml          # ConfigMap config.yaml (cho BE)
+│   ├── 20-api-deployment.yaml  # BE Deployment
+│   ├── 30-api-service.yaml     # BE Service ClusterIP (internal)
+│   ├── 40-web-deployment.yaml  # FE Deployment (nginx)
+│   └── 50-web-service.yaml     # FE Service NodePort 30088
 ├── apply.sh
 ├── verify.sh
 └── teardown.sh
@@ -74,83 +80,74 @@ phases/03-goshop/
 kubectl -n data get pods   # postgres-0 + redis-... đều Running
 ```
 
-Nếu chưa, quay lại Phase 2.
+### Step 2 — Tạo PAT ghcr.io
 
-### Step 2 — Tạo Personal Access Token (PAT) cho ghcr.io
-
-1. Vào https://github.com/settings/tokens/new?scopes=write:packages,read:packages
-2. Note: `ghcr-push`
-3. Expiration: 90 days (hoặc tuỳ)
-4. Generate → copy token (`ghp_xxx...`)
-5. Export:
+1. https://github.com/settings/tokens/new?scopes=write:packages,read:packages
+2. Generate → copy
+3. Export:
    ```bash
    export GHCR_USER=quangdangfit
    export GHCR_TOKEN=ghp_xxx...
    ```
 
-> Lưu token vào password manager. Mất là phải tạo lại.
-
-### Step 3 — Build & push image
+### Step 3 — Build & push 2 image
 
 ```bash
 ./build-and-push.sh
 ```
 
-Script này:
-1. Clone (hoặc pull) `quangdangfit/goshop` vào `/tmp/goshop-src`
-2. `docker login ghcr.io -u $GHCR_USER -p $GHCR_TOKEN`
-3. `docker buildx create --use --name multi-arch` (nếu chưa có)
-4. Cài QEMU emulator: `docker run --rm --privileged tonistiigi/binfmt --install all`
-5. `docker buildx build --platform linux/amd64,linux/arm64 --tag ghcr.io/$GHCR_USER/goshop:master --push .`
+Script lần lượt:
+1. Clone goshop repo vào `/tmp/goshop-src`
+2. Copy `web/Dockerfile` + `web/nginx.conf` vào `/tmp/goshop-src/web/` (goshop repo chưa có)
+3. `docker login ghcr.io`
+4. Cài QEMU + buildx
+5. Build & push **BE** từ `/tmp/goshop-src/` (root, dùng Dockerfile gốc của repo)
+6. Build & push **FE** từ `/tmp/goshop-src/web/` (dùng Dockerfile mới copy vào)
 
-Lần đầu mất 5-10 phút (compile + emulation ARM). Lần sau cache Docker layer thường <2 phút nếu Dockerfile không thay đổi.
+Lần đầu ~10 phút (build cả Go + Node trên 2 arch). Lần sau cache layer → ~2-3 phút.
 
-### Step 4 — Đặt image package public
+### Step 4 — Đặt CẢ 2 package public
 
-Image vừa push **mặc định private** → k3s không pull được.
+Sau khi push xong, vào:
+- https://github.com/quangdangfit/goshop/pkgs/container/goshop → settings → public
+- https://github.com/quangdangfit/goshop/pkgs/container/goshop-web → settings → public
 
-1. Vào https://github.com/quangdangfit/goshop/pkgs/container/goshop
-2. Package settings (cuối trang bên phải) → Change visibility → Public
+Quên 1 trong 2 → pod đó sẽ `ImagePullBackOff`.
 
-> Nếu muốn giữ private: phải tạo `imagePullSecret` trong namespace `default` và tham chiếu trong `spec.imagePullSecrets`. Để đơn giản: chọn public.
-
-### Step 5 — Render config + apply manifest
+### Step 5 — Apply manifest
 
 ```bash
 ./apply.sh
 ```
 
-Script này:
-1. Sử dụng ns `default` (có sẵn, không cần tạo)
-2. Apply ConfigMap (config.yaml đã trỏ sẵn vào `postgres.data` và `redis.data`)
-3. Apply Deployment với image `ghcr.io/$GHCR_USER/goshop:master`
-4. Apply Service NodePort 30088
-5. Đợi rollout
+Script render `GHCR_USER_PLACEHOLDER → $GHCR_USER` trong 2 deployment YAML, rồi `kubectl apply`.
 
 ### Step 6 — Smoke test
 
 ```bash
-# Health check qua NodePort:
+# UI React (index.html)
+curl -I http://$VM_IP:30088/
+# 200 OK, Content-Type: text/html
+
+# Health endpoint (FE nginx proxy đến BE)
 curl http://$VM_IP:30088/health
+# {"data":null,...}
 
-# Hoặc port-forward để test mà không cần mở port OCI:
-kubectl port-forward svc/goshop 8888:8888
-# Tab khác:
-curl http://localhost:8888/health
+# Swagger
+open http://$VM_IP:30088/swagger/index.html
 ```
 
-Nếu app có Swagger:
-```
-http://$VM_IP:30088/swagger/index.html
-```
+Mở browser `http://$VM_IP:30088/` thấy giao diện goshop.
 
-### Step 7 — Kiểm tra logs
+### Step 7 — Logs khi gặp sự cố
 
 ```bash
-kubectl logs -l app=goshop --tail=50 -f
-```
+# Log nginx FE — xem proxy có hit BE không
+kubectl logs -l app=goshop-web --tail=50 -f
 
-Nếu thấy error kết nối DB, vào Troubleshooting bên dưới.
+# Log BE Go
+kubectl logs -l app=goshop-api --tail=50 -f
+```
 
 ## Verify
 
@@ -158,22 +155,25 @@ Nếu thấy error kết nối DB, vào Troubleshooting bên dưới.
 ./verify.sh
 ```
 
+Check: 2 deployment Available, 2 service có endpoint, FE `/` = 200, `/health` proxy ok.
+
 ## Troubleshooting
 
 | Triệu chứng | Lệnh | Fix |
 |---|---|---|
-| `ImagePullBackOff` | `kubectl describe pod <pod>` | Image vẫn private (Step 4) hoặc tag không tồn tại |
-| `exec format error` trong log | `kubectl logs ...` | Build thiếu arm64 → build lại với `--platform linux/amd64,linux/arm64` |
-| `connection refused` đến postgres | `kubectl logs ...` + `kubectl -n data get svc postgres` | Phase 2 chưa apply hoặc DNS sai. Test: `kubectl run dnstest --rm -it --image=busybox -- nslookup postgres.data` |
-| `password authentication failed` | logs | Mật khẩu trong ConfigMap không khớp Secret ở Phase 2 (`goshop_dev`) |
-| App start ok nhưng `/health` 404 | `curl ... -v` | Đường dẫn health endpoint khác; thử `/`, `/health`, hoặc `/api/v1/health` |
-| Pod restart liên tục | `kubectl describe pod ...` (Events) | livenessProbe quá khắt khe → tăng `initialDelaySeconds` |
-| Migration cần chạy thủ công | `kubectl logs ... | grep -i migrat` | Goshop hiện auto-migrate qua GORM khi start, không cần Job riêng. Nếu lỗi, kiểm tra schema trong DB |
+| `ImagePullBackOff` cả 2 pod | `kubectl describe pod ...` | Quên 1 trong 2 package chưa set public |
+| FE trả 200 nhưng `/api/*` 502 | `kubectl logs -l app=goshop-web` | nginx upstream "goshop-api" chưa Ready, hoặc BE crash. Check `kubectl get pods -l app=goshop-api` |
+| `/api/*` 404 | check route trong code BE | Path BE không có prefix `/api` — đọc kỹ code goshop. Có thể cần sửa nginx.conf bỏ `/api/` prefix khi proxy |
+| FE blank trang | DevTools Console | Bundle path sai; xem `vite.config.ts` `base:` |
+| Refresh route React → 404 | nginx log | `try_files $uri /index.html` đã có sẵn — verify nginx.conf đã được mount |
+| Pod web restart liên tục | `kubectl describe pod -l app=goshop-web` | readinessProbe path sai, hoặc nginx config sai → `kubectl logs ...` |
+| `exec format error` | logs | Build thiếu arm64 — verify `--platform linux/amd64,linux/arm64` |
+| BE `connection refused` postgres | `kubectl logs -l app=goshop-api` | Phase 2 chưa apply / DNS sai. Test: `kubectl run dnstest --rm -it --image=busybox -- nslookup postgres.data` |
 
 ## Cleanup
 
 ```bash
-./teardown.sh   # xoá deployment/service/configmap trong ns default, GIỮ Phase 2 data
+./teardown.sh   # xoá BE + FE deployment/service/configmap, GIỮ Phase 2 data
 ```
 
 ---

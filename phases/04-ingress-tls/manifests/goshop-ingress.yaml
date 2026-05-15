@@ -21,6 +21,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: goshop
+                # FE service ở Phase 3. FE nginx tự proxy /api → goshop-api nội bộ.
+                name: goshop-web
                 port:
-                  number: 8888
+                  number: 80

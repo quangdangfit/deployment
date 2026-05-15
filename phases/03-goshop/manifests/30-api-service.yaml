@@ -1,0 +1,19 @@
+# Service BE = ClusterIP (NỘI BỘ cluster, không expose ra ngoài).
+# FE nginx proxy /api → goshop-api:8888 qua DNS service.
+# Public traffic vào FE Service (50-web-service.yaml) hoặc Ingress (Phase 4).
+apiVersion: v1
+kind: Service
+metadata:
+  name: goshop-api
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: goshop-api
+  ports:
+    - name: http
+      port: 8888
+      targetPort: http
+    - name: grpc
+      port: 8889
+      targetPort: grpc

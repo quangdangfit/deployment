@@ -47,7 +47,7 @@ Mình **dùng** chart có sẵn ở phase này. Phase 5 sẽ **viết** chart ch
 
 ### Ingress Controller vs Ingress Resource
 
-- **Ingress Resource** (YAML): khai báo "request to `goshop.domain` → service `goshop:8888`"
+- **Ingress Resource** (YAML): khai báo "request to `goshop.domain` → service `goshop-web:80`"
 - **Ingress Controller** (pod thực thi): đọc các Ingress Resource và cấu hình proxy (nginx, traefik, envoy, …). **Phải cài controller**, k8s mặc định không có.
 
 Mình chọn **ingress-nginx** (nginx + Lua) vì:
@@ -170,7 +170,7 @@ dig +short goshop.cunghoclaptrinh.online
 ### Step 7 — Đảm bảo goshop đã chạy (Phase 3)
 
 ```bash
-kubectl -n default get svc goshop
+kubectl -n default get svc goshop-web
 # Nếu chưa: quay lại Phase 3
 ```
 

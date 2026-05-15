@@ -1,0 +1,17 @@
+# Service FE = NodePort cho test trực tiếp qua $VM_IP:30088.
+# Phase 4 sẽ thêm Ingress trỏ vào Service này. Lúc đó vẫn giữ NodePort cũng OK
+# (để debug khi ingress chết), hoặc đổi sang ClusterIP nếu muốn ép traffic đi qua ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: goshop-web
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: goshop-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 30088

@@ -7,20 +7,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP="$(mktemp -d)"
 trap "rm -rf $TMP" EXIT
 
-echo "==> Rendering manifests (injecting GHCR_USER=$GHCR_USER)"
+echo "==> Rendering manifests (GHCR_USER=$GHCR_USER)"
 cp -r "$SCRIPT_DIR/manifests" "$TMP/"
-sed -i.bak "s|GHCR_USER_PLACEHOLDER|$GHCR_USER|g" "$TMP/manifests/20-deployment.yaml"
+sed -i.bak "s|GHCR_USER_PLACEHOLDER|$GHCR_USER|g" \
+  "$TMP/manifests/20-api-deployment.yaml" \
+  "$TMP/manifests/40-web-deployment.yaml"
 rm "$TMP/manifests/"*.bak
 
-echo "==> Applying to ns=default"
+echo "==> Applying"
 kubectl apply -f "$TMP/manifests/"
 
-echo "==> Waiting for rollout"
-kubectl rollout status deployment/goshop --timeout=180s
+echo "==> Waiting for BE rollout"
+kubectl rollout status deployment/goshop-api --timeout=180s
+echo "==> Waiting for FE rollout"
+kubectl rollout status deployment/goshop-web --timeout=180s
 
 echo
-kubectl get pods,svc -l app=goshop
+kubectl get pods,svc -l 'app in (goshop-api,goshop-web)'
 
 echo
 echo "==> Smoke test:"
-echo "    curl http://\$VM_IP:30088/health"
+echo "    curl http://\$VM_IP:30088/         # FE index.html"
+echo "    curl http://\$VM_IP:30088/health   # proxy → BE /health"
+echo "    curl http://\$VM_IP:30088/api/...  # proxy → BE /api/..."
