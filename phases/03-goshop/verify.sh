@@ -16,11 +16,11 @@ check "service goshop has endpoints" \
   bash -c "test -n \"\$(kubectl get endpoints goshop -o jsonpath='{.subsets[0].addresses[0].ip}')\""
 
 echo "==> HTTP check"
-code=$(curl -sS -o /dev/null -w '%{http_code}' "http://${VM_IP}:30088/healthz" || echo "000")
+code=$(curl -sS -o /dev/null -w '%{http_code}' "http://${VM_IP}:30088/health" || echo "000")
 if [[ "$code" =~ ^(200|204)$ ]]; then
-  echo "  [OK]   http://$VM_IP:30088/healthz returned $code"
+  echo "  [OK]   http://$VM_IP:30088/health returned $code"
 else
-  echo "  [WARN] http://$VM_IP:30088/healthz returned $code"
+  echo "  [WARN] http://$VM_IP:30088/health returned $code"
   echo "         Try /, /health, /api/v1/health. Or check OCI firewall for port 30088."
   fail=1
 fi

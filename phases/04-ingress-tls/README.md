@@ -9,7 +9,7 @@ Thay NodePort `30088` bằng domain thật **`https://goshop.cunghoclaptrinh.onl
 
 **Đầu ra mong đợi:**
 ```bash
-$ curl -I https://goshop.cunghoclaptrinh.online/healthz
+$ curl -I https://goshop.cunghoclaptrinh.online/health
 HTTP/2 200
 $ echo | openssl s_client -connect goshop.cunghoclaptrinh.online:443 2>/dev/null \
     | openssl x509 -noout -issuer
@@ -194,7 +194,7 @@ kubectl -n default describe certificate goshop-tls
 
 Test (cert staging KHÔNG được tin, dùng `-k` để skip verify):
 ```bash
-curl -kI https://goshop.cunghoclaptrinh.online/healthz
+curl -kI https://goshop.cunghoclaptrinh.online/health
 # HTTP/2 200
 ```
 
@@ -220,7 +220,7 @@ kubectl -n default delete secret goshop-tls certificate goshop-tls
 
 Đợi cert mới Ready, rồi:
 ```bash
-curl -I https://goshop.cunghoclaptrinh.online/healthz   # KHÔNG -k
+curl -I https://goshop.cunghoclaptrinh.online/health   # KHÔNG -k
 # HTTP/2 200, không error
 ```
 
@@ -238,7 +238,7 @@ Check:
 - Pod ingress-nginx + cert-manager Running
 - ClusterIssuer Ready
 - Cert `goshop-tls` Ready=True
-- `https://goshop.domain/healthz` trả 200 với cert hợp lệ
+- `https://goshop.domain/health` trả 200 với cert hợp lệ
 
 ## Troubleshooting
 

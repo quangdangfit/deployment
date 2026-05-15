@@ -17,12 +17,12 @@ check "Certificate goshop-tls Ready" \
   kubectl -n default wait --for=condition=Ready certificate/goshop-tls --timeout=10s
 
 echo "==> HTTPS"
-code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/healthz" || echo 000)
-verify=$(curl -sS -o /dev/null -w '%{ssl_verify_result}' "https://$DOMAIN/healthz" || echo "?")
+code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/health" || echo 000)
+verify=$(curl -sS -o /dev/null -w '%{ssl_verify_result}' "https://$DOMAIN/health" || echo "?")
 if [[ "$code" =~ ^(200|204)$ && "$verify" == "0" ]]; then
-  echo "  [OK]   https://$DOMAIN/healthz = $code, cert valid"
+  echo "  [OK]   https://$DOMAIN/health = $code, cert valid"
 else
-  echo "  [FAIL] https://$DOMAIN/healthz returned $code, verify=$verify"
+  echo "  [FAIL] https://$DOMAIN/health returned $code, verify=$verify"
   echo "         Hint: nếu vẫn dùng staging, cert sẽ không pass verify. Chuyển sang letsencrypt-prod."
   fail=1
 fi

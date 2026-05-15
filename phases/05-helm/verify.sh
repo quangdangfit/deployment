@@ -11,8 +11,8 @@ check "helm release goshop deployed" \
 check "deployment Available" kubectl -n default wait --for=condition=Available deployment -l app.kubernetes.io/name=goshop --timeout=10s
 check "ingress exists" kubectl -n default get ingress goshop-goshop
 
-code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/healthz" || echo 000)
-echo "  [INFO] https://$DOMAIN/healthz -> $code"
+code=$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/health" || echo 000)
+echo "  [INFO] https://$DOMAIN/health -> $code"
 [[ "$code" =~ ^(200|204)$ ]] || fail=1
 
 exit $fail

@@ -23,4 +23,4 @@ kubectl get pods,svc -l app=goshop
 
 echo
 echo "==> Smoke test:"
-echo "    curl http://\$VM_IP:30088/healthz"
+echo "    curl http://\$VM_IP:30088/health"

@@ -2,13 +2,13 @@
 
 ## Mục tiêu
 
-Build image goshop **multi-arch** (amd64 + arm64), push lên ghcr.io, deploy lên k8s, kết nối với Postgres + Redis từ Phase 2. Truy cập qua `http://$VM_IP:30088/healthz`.
+Build image goshop **multi-arch** (amd64 + arm64), push lên ghcr.io, deploy lên k8s, kết nối với Postgres + Redis từ Phase 2. Truy cập qua `http://$VM_IP:30088/health`.
 
 CHƯA có domain/HTTPS — đó là Phase 4.
 
 **Đầu ra mong đợi:**
 ```bash
-$ curl http://$VM_IP:30088/healthz
+$ curl http://$VM_IP:30088/health
 {"status":"ok"}   # hoặc tương đương
 ```
 
@@ -131,12 +131,12 @@ Script này:
 
 ```bash
 # Health check qua NodePort:
-curl http://$VM_IP:30088/healthz
+curl http://$VM_IP:30088/health
 
 # Hoặc port-forward để test mà không cần mở port OCI:
 kubectl port-forward svc/goshop 8888:8888
 # Tab khác:
-curl http://localhost:8888/healthz
+curl http://localhost:8888/health
 ```
 
 Nếu app có Swagger:
@@ -166,7 +166,7 @@ Nếu thấy error kết nối DB, vào Troubleshooting bên dưới.
 | `exec format error` trong log | `kubectl logs ...` | Build thiếu arm64 → build lại với `--platform linux/amd64,linux/arm64` |
 | `connection refused` đến postgres | `kubectl logs ...` + `kubectl -n data get svc postgres` | Phase 2 chưa apply hoặc DNS sai. Test: `kubectl run dnstest --rm -it --image=busybox -- nslookup postgres.data` |
 | `password authentication failed` | logs | Mật khẩu trong ConfigMap không khớp Secret ở Phase 2 (`goshop_dev`) |
-| App start ok nhưng `/healthz` 404 | `curl ... -v` | Đường dẫn health endpoint khác; thử `/`, `/health`, hoặc `/api/v1/health` |
+| App start ok nhưng `/health` 404 | `curl ... -v` | Đường dẫn health endpoint khác; thử `/`, `/health`, hoặc `/api/v1/health` |
 | Pod restart liên tục | `kubectl describe pod ...` (Events) | livenessProbe quá khắt khe → tăng `initialDelaySeconds` |
 | Migration cần chạy thủ công | `kubectl logs ... | grep -i migrat` | Goshop hiện auto-migrate qua GORM khi start, không cần Job riêng. Nếu lỗi, kiểm tra schema trong DB |
 
