@@ -24,7 +24,7 @@ Bitnami stateful charts) so workload manifests under `goshop/` are reusable with
 
 - VM: `VM.Standard.A1.Flex`, **2 OCPU / 16 GB RAM**, Ubuntu 22.04 ARM, already provisioned with a
   reserved public IP and SSH access via `~/.ssh/oci_goshop`.
-- Domain: `goshop.quangdang.dev` managed in Cloudflare.
+- Domain: `goshop.cunghoclaptrinh.online` managed in Cloudflare.
 - Secrets: Doppler project `goshop`, env `prod`, service token issued.
 - Image: `ghcr.io/quangdangfit/goshop` (public).
 
@@ -67,7 +67,7 @@ Bitnami stateful charts) so workload manifests under `goshop/` are reusable with
 |---|---|---|
 | k3s | Kubernetes control plane + kubelet on one node | shell installer (`get.k3s.io`) |
 | ingress-nginx | L7 ingress, binds host 80/443 via `hostNetwork: true` | Helm (bootstrap), then ArgoCD |
-| cert-manager | Let's Encrypt HTTP-01 issuer for `*.quangdang.dev` | Helm (bootstrap), then ArgoCD |
+| cert-manager | Let's Encrypt HTTP-01 issuer for `*.cunghoclaptrinh.online` | Helm (bootstrap), then ArgoCD |
 | ArgoCD | GitOps reconciler, single replica | Helm (bootstrap), then self-managed |
 | External Secrets Operator | Pulls secrets from Doppler into k8s Secrets | Helm (bootstrap), then ArgoCD |
 | local-path-provisioner | Default StorageClass for PVCs (host-path) | bundled with k3s |
@@ -92,7 +92,7 @@ Comfortable. A slim Prometheus stack (~3 GB) fits later without re-sizing.
 
 ## Traffic & TLS path
 
-1. DNS: Cloudflare A record `goshop.quangdang.dev → <VM public IP>`, **proxy OFF** initially
+1. DNS: Cloudflare A record `goshop.cunghoclaptrinh.online → <VM public IP>`, **proxy OFF** initially
    so `cert-manager` can complete HTTP-01 challenges. After certs issue successfully the proxy
    can be re-enabled.
 2. ingress-nginx runs as a DaemonSet with `hostNetwork: true` and `hostPort` on 80/443. No
@@ -141,14 +141,14 @@ goshop/                          # unchanged — manifests are cluster-agnostic
 
 1. **Phase 1 — VM prep.** Open ports in NSG, apply iptables fix, set timezone, disable swap.
 2. **Phase 2 — Install k3s.** Run installer with `--disable traefik --disable servicelb
-   --tls-san <PUBLIC_IP> --tls-san goshop.quangdang.dev`. Copy kubeconfig to local,
+   --tls-san <PUBLIC_IP> --tls-san goshop.cunghoclaptrinh.online`. Copy kubeconfig to local,
    rewrite server URL to public IP, verify node Ready.
 3. **Phase 3 — Bootstrap platform.** Helm install (in this order): ingress-nginx → point
    DNS → cert-manager + ClusterIssuer → ArgoCD → External Secrets Operator + Doppler
    `SecretStore`.
 4. **Phase 4 — GitOps takeover.** Create `clusters/k3s/platform/root.yaml`. ArgoCD sync
    adopts platform components, then sync `goshop/apps/root.yaml` to bring up Postgres,
-   Redis, and the app. Verify `https://goshop.quangdang.dev/healthz`.
+   Redis, and the app. Verify `https://goshop.cunghoclaptrinh.online/healthz`.
 5. **Phase 5 — Deferred.** Monitoring, backups (pg_dump + etcd snapshot to Object Storage),
    recovery runbook. Tracked as separate work items, not part of this spec.
 
@@ -168,5 +168,5 @@ goshop/                          # unchanged — manifests are cluster-agnostic
 
 - `kubectl get nodes` shows the single node Ready from the local workstation.
 - ArgoCD UI reachable, all platform Apps Synced + Healthy.
-- `curl https://goshop.quangdang.dev/healthz` returns 200 with a valid Let's Encrypt cert.
+- `curl https://goshop.cunghoclaptrinh.online/healthz` returns 200 with a valid Let's Encrypt cert.
 - Doppler-sourced secrets visible as `Secret` objects in the `goshop` namespace.
