@@ -123,7 +123,7 @@ Lần đầu ~5-8 phút (build arm64 qua QEMU chậm). Lần sau ~1-3 phút (cac
 ### Step 2 — Đặt package goshop public
 
 Sau khi workflow chạy xong lần đầu, vào:
-`https://github.com/quangdangfit/goshop/pkgs/container/goshop/settings`
+`https://github.com/users/quangdangfit/packages/container/goshop/settings`
 → **Change visibility** → **Public**.
 
 (Skip nếu đã làm ở Phase 3.)
