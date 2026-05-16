@@ -57,7 +57,7 @@ spec:
     path: phases/05-helm/chart/goshop
     targetRevision: main
     helm:
-      valueFiles: [values.yaml, values-prod.yaml]
+      valueFiles: [values.yaml]
   destination:
     server: https://kubernetes.default.svc
     namespace: default
@@ -212,20 +212,6 @@ Verify:
 ```bash
 kubectl -n default get pods   # phải thấy 2 pod
 ```
-
-### Step 8 — Chuyển sang prod values
-
-Edit Application để truyền 2 values file:
-```yaml
-spec:
-  source:
-    helm:
-      valueFiles:
-        - values.yaml
-        - values-prod.yaml      # ← thêm
-```
-
-Commit + push → tự sync → 2 pod + prod issuer.
 
 ## Verify
 

@@ -73,11 +73,9 @@ cert-manager tự động:
 5. Lưu cert vào Secret
 6. Gia hạn sau 60 ngày (cert LE dài 90 ngày)
 
-### ClusterIssuer staging vs prod
+### ClusterIssuer prod
 
-Let's Encrypt **rate limit nghiêm**: 5 cert/domain/tuần ở prod. Khi debug dễ dính rate limit và phải đợi 1 tuần.
-
-→ Best practice: dùng `letsencrypt-staging` (rate limit cao, cert KHÔNG được trình duyệt tin) để test trước. Hoạt động xong mới chuyển sang `letsencrypt-prod`.
+Project chỉ dùng `letsencrypt-prod`. Let's Encrypt rate limit **5 cert/domain/tuần** — trước khi apply phải đảm bảo DNS đúng và Cloudflare proxy OFF để tránh đốt quota.
 
 ### Cloudflare proxy phải OFF (orange cloud → grey cloud)
 
@@ -91,7 +89,6 @@ phases/04-ingress-tls/
 ├── install-ingress.sh         # helm install ingress-nginx
 ├── install-cert-manager.sh    # helm install cert-manager
 ├── manifests/
-│   ├── cluster-issuer-staging.yaml
 │   ├── cluster-issuer-prod.yaml
 │   └── goshop-ingress.yaml    # Ingress resource cho goshop
 ├── apply-issuers.sh
@@ -141,17 +138,17 @@ Script:
 2. `helm upgrade --install cert-manager jetstack/cert-manager --set installCRDs=true`
 3. Đợi 3 deployment (cert-manager, webhook, cainjector) Ready
 
-### Step 5 — Tạo ClusterIssuer staging & prod
+### Step 5 — Tạo ClusterIssuer prod
 
 ```bash
 ./apply-issuers.sh
 ```
 
-Apply 2 ClusterIssuer trỏ tới LE staging + prod, dùng HTTP-01 solver với ingress class `nginx`.
+Apply ClusterIssuer trỏ tới LE prod, dùng HTTP-01 solver với ingress class `nginx`.
 
 ```bash
 kubectl get clusterissuer
-# Mong đợi: cả 2 READY=True trong ~30s
+# Mong đợi: letsencrypt-prod READY=True trong ~30s
 ```
 
 ### Step 6 — Trỏ DNS Cloudflare
@@ -182,8 +179,6 @@ kubectl -n default get svc goshop-web
 > - `dig +short goshop.cunghoclaptrinh.online` trả về đúng `$VM_IP`
 > - Cloudflare proxy = **DNS only** (grey cloud)
 > - `curl -I http://goshop.cunghoclaptrinh.online` trả 404 từ nginx (ingress đã bắt được host)
->
-> Nếu lo lắng / chưa chắc: tạm dùng `cluster-issuer: letsencrypt-staging` để debug (cert không hợp lệ với browser nhưng rate limit cao), khi OK đổi sang `letsencrypt-prod`.
 
 ```bash
 ./apply-goshop-ingress.sh
@@ -210,7 +205,7 @@ Inspect cert chain:
 ```bash
 echo | openssl s_client -connect goshop.cunghoclaptrinh.online:443 2>/dev/null \
   | openssl x509 -noout -issuer -subject -dates
-# issuer phải chứa "Let's Encrypt", KHÔNG có "STAGING"
+# issuer phải chứa "Let's Encrypt"
 ```
 
 ### Step 9 — Bật lại Cloudflare proxy (optional)
@@ -234,10 +229,9 @@ Check:
 | Triệu chứng | Lệnh | Fix |
 |---|---|---|
 | Certificate stuck `False` | `kubectl -n default describe challenge` | Thường: Cloudflare proxy ON, hoặc DNS chưa propagate, hoặc port 80 chưa mở |
-| `acme: error: 429: ... rate limit` | (log cert-manager) | Bị rate limit prod. Đợi 1 tuần hoặc dùng staging |
+| `acme: error: 429: ... rate limit` | (log cert-manager) | Bị rate limit prod. Đợi 1 tuần — đảm bảo DNS + Cloudflare đúng trước khi apply lại |
 | `connection refused` khi curl :80 | `kubectl -n ingress-nginx get pod -o wide` + `ssh ... ss -tlnp \| grep :80` | hostNetwork không bind. Xác minh DaemonSet pod Ready trên node |
 | `404 default backend` khi curl đúng domain | `kubectl -n default describe ingress goshop` | host/path không khớp, hoặc service backend sai tên |
-| Browser warning về cert | `openssl s_client ...` | Có thể cert vẫn staging — đảm bảo đã chuyển sang `letsencrypt-prod` |
 
 ## Cleanup
 

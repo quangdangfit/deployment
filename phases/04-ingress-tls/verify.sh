@@ -23,7 +23,6 @@ if [[ "$code" =~ ^(200|204)$ && "$verify" == "0" ]]; then
   echo "  [OK]   https://$DOMAIN/health = $code, cert valid"
 else
   echo "  [FAIL] https://$DOMAIN/health returned $code, verify=$verify"
-  echo "         Hint: nếu vẫn dùng staging, cert sẽ không pass verify. Chuyển sang letsencrypt-prod."
   fail=1
 fi
 

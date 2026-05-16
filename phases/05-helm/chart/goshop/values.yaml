@@ -1,7 +1,7 @@
-# Default profile = dev. Prod overlay: values-prod.yaml.
+# Prod-only values.
 
 api:
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop
     tag: ""            # empty → fallback Chart.appVersion
@@ -11,7 +11,7 @@ api:
     limits:   { cpu: 500m, memory: 512Mi }
 
 web:
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop-web
     tag: ""            # empty → fallback Chart.appVersion
@@ -32,14 +32,14 @@ service:
 ingress:
   enabled: true
   className: nginx
-  clusterIssuer: letsencrypt-staging
+  clusterIssuer: letsencrypt-prod
   host: goshop.cunghoclaptrinh.online
   tlsSecretName: goshop-tls
 
 # Config app cho BE. Phase 7 tách secrets sang ExternalSecret.
 config:
   environment: production
-  authSecret: change-me-dev-jwt-secret
+  authSecret: change-me-prod-strong-secret
   database:
     uri: postgres://goshop:goshop_dev@postgres.data:5432/goshop?sslmode=disable
   redis:

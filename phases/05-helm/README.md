@@ -4,8 +4,7 @@
 
 Đóng gói raw manifests của goshop (Phase 3) + Ingress (Phase 4) thành **Helm chart** riêng. Sau phase này:
 - 1 lệnh `helm upgrade --install` thay cho `kubectl apply -f ...` lẻ tẻ
-- Tách config theo môi trường (`values-dev.yaml`, `values-prod.yaml`)
-- Tag image, replicas, resources, ingress host đều parametrize qua values
+- Tag image, replicas, resources, ingress host đều parametrize qua `values.yaml`
 
 **Đầu ra mong đợi:**
 ```bash
@@ -38,7 +37,7 @@ Không có Helm, deploy 1 app vừa = vừa nghĩa đầy đủ trên k8s cần 
 
 | Vấn đề | Không Helm | Có Helm |
 |---|---|---|
-| **Lặp code giữa env** | Copy file YAML cho dev/stg/prod, sửa từng giá trị | 1 chart + nhiều `values-<env>.yaml` chỉ ghi đè key khác biệt |
+| **Param hoá config** | Hardcode trong YAML, sửa tay mỗi lần | Tách `values.yaml`, override bằng `--set` hoặc `-f` |
 | **Param hoá runtime** | sed/envsubst/yq hack | `{{ .Values.replicaCount }}` native |
 | **Track app version** | git tag tay | Chart.yaml: `version` (chart) + `appVersion` (app), revision tự đếm |
 | **Rollback** | kubectl rollout undo từng deployment lẻ tẻ | `helm rollback <release> <revision>` — 1 lệnh revert hết |
@@ -50,17 +49,17 @@ Không có Helm, deploy 1 app vừa = vừa nghĩa đầy đủ trên k8s cần 
 ### Khái niệm cốt lõi
 
 - **Chart** — thư mục `chart/<name>/` chứa Chart.yaml + templates + values
-- **Release** — 1 instance chart đã cài (`helm install <release-name> <chart>`). Cùng chart có thể cài nhiều release với release name khác nhau (vd `goshop-dev`, `goshop-staging`)
+- **Release** — 1 instance chart đã cài (`helm install <release-name> <chart>`). Cùng chart có thể cài nhiều release với release name khác nhau.
 - **Revision** — mỗi lần `helm upgrade` tăng 1; rollback theo số revision
 - **Repository** — server lưu nhiều chart (https://kubernetes.github.io/ingress-nginx, https://charts.jetstack.io, …)
 
 ### Khi nào KHÔNG cần Helm
 
 - Cluster cá nhân, 1-2 resource đơn giản — `kubectl apply -f` đủ
-- Manifest cực ngắn và không bao giờ deploy multi-env
+- Manifest cực ngắn và không cần param hoá
 - Bạn dùng Kustomize (overlay-based, không template) thay vì Helm
 
-→ Goshop có ~7 manifest × 2 env (dev/prod) → Helm thắng rõ rệt.
+→ Goshop có ~7 manifest cần param hoá tag/replicas/host → Helm thắng rõ rệt.
 
 ### Helm 3 vs Helm 2
 
@@ -71,8 +70,7 @@ Helm 2 có server-side component `Tiller` (cài trong cluster, mang cluster-admi
 ```
 chart/goshop/
 ├── Chart.yaml             # name, version (chart version) + appVersion
-├── values.yaml            # default values (override được)
-├── values-prod.yaml       # overlay cho prod (chỉ ghi đè key cần đổi)
+├── values.yaml            # values (override được qua --set)
 ├── templates/
 │   ├── _helpers.tpl       # template snippets dùng lại (vd: full name, labels chuẩn)
 │   ├── configmap.yaml
@@ -105,18 +103,6 @@ spec:
 - `include "..."` — gọi named template
 - `| default X` — fallback nếu giá trị empty
 
-### Tại sao tách `values-prod.yaml`?
-
-Common pattern: 1 base `values.yaml` cho default (= dev), 1 file overlay cho từng môi trường ghi đè chỉ key cần đổi:
-
-```bash
-helm upgrade --install goshop ./chart \
-  -f chart/values.yaml \
-  -f chart/values-prod.yaml      # ghi đè key trùng
-```
-
-→ DRY, dễ diff giữa môi trường.
-
 ### `helm template` vs `helm install`
 
 - `helm template` — render YAML ra stdout, KHÔNG apply. Dùng để **debug** xem template render đúng không.
@@ -135,8 +121,7 @@ phases/05-helm/
 ├── README.md
 ├── chart/goshop/
 │   ├── Chart.yaml
-│   ├── values.yaml             # default = dev profile (staging issuer)
-│   ├── values-prod.yaml        # overlay: prod issuer, replicas=2, image tag thật
+│   ├── values.yaml             # prod values (issuer=letsencrypt-prod, replicas=2)
 │   ├── .helmignore
 │   └── templates/
 │       ├── _helpers.tpl
@@ -171,12 +156,12 @@ helm template goshop ./chart/goshop -n goshop \
   --set image.tag=master
 ```
 
-### Step 3 — Install dev profile
+### Step 3 — Install
 
 ```bash
 export GHCR_USER=quangdangfit
 export IMAGE_TAG=master
-./install.sh dev
+./install.sh
 ```
 
 Script chạy:
@@ -205,19 +190,7 @@ GHCR_USER=quangdangfit GHCR_TOKEN=... TAG=master \
 
 Hoặc reuse tag đã có từ Phase 3 — không bắt buộc đổi.
 
-### Step 5 — Upgrade với prod profile
-
-Khi sẵn sàng (cert prod đã setup ở Phase 4):
-```bash
-./install.sh prod
-```
-
-Script truyền thêm `-f chart/goshop/values-prod.yaml` để override:
-- `ingress.clusterIssuer: letsencrypt-prod`
-- `replicaCount: 2`
-- (tùy bạn thêm)
-
-### Step 6 — Rollback (nếu cần)
+### Step 5 — Rollback (nếu cần)
 
 ```bash
 helm -n default history goshop

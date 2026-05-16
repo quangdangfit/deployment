@@ -6,7 +6,7 @@ set -euo pipefail
 kubectl -n default delete ingress goshop --ignore-not-found
 kubectl -n default delete certificate goshop-tls --ignore-not-found
 kubectl -n default delete secret goshop-tls --ignore-not-found
-kubectl delete clusterissuer letsencrypt-staging letsencrypt-prod --ignore-not-found
+kubectl delete clusterissuer letsencrypt-prod --ignore-not-found
 
 echo "==> To uninstall platform charts:"
 echo "    helm -n ingress-nginx uninstall ingress-nginx && kubectl delete ns ingress-nginx"

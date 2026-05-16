@@ -4,14 +4,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-kubectl apply -f "$SCRIPT_DIR/manifests/cluster-issuer-staging.yaml"
 kubectl apply -f "$SCRIPT_DIR/manifests/cluster-issuer-prod.yaml"
 
-echo "==> Waiting for issuers Ready (cert-manager validates ACME account creation)"
+echo "==> Waiting for issuer Ready (cert-manager validates ACME account creation)"
 for i in 1 2 3 4 5 6; do
-  if kubectl get clusterissuer letsencrypt-staging letsencrypt-prod \
-       -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | grep -q "True True"; then
-    echo "    Both Ready."
+  if [[ "$(kubectl get clusterissuer letsencrypt-prod \
+       -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')" == "True" ]]; then
+    echo "    Ready."
     break
   fi
   sleep 5

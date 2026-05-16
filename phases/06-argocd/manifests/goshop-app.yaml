@@ -14,8 +14,6 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        # Bỏ comment khi deploy prod:
-        # - values-prod.yaml
       # Tag cố định "master" — Phase 8 (Image Updater) sẽ tự bump.
       parameters:
         - name: api.image.tag
