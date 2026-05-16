@@ -4,8 +4,8 @@ api:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop
-    tag: "master-a4e8ebe" # empty → fallback Chart.appVersion
-    pullPolicy: IfNotPresent
+    tag: "master-a4e8ebe"   # auto-bumped by argocd-image-updater
+    pullPolicy: Always
   resources:
     requests: {cpu: 100m, memory: 128Mi}
     limits: {cpu: 500m, memory: 512Mi}
@@ -13,8 +13,8 @@ web:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop-web
-    tag: "master-a4e8ebe" # empty → fallback Chart.appVersion
-    pullPolicy: IfNotPresent
+    tag: "master-a4e8ebe"   # auto-bumped by argocd-image-updater
+    pullPolicy: Always
   resources:
     requests: {cpu: 10m, memory: 32Mi}
     limits: {cpu: 200m, memory: 128Mi}
