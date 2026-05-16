@@ -24,12 +24,17 @@ env:
   DATABASE_URL: "file:/data/snapnews.db"
   TZ: Asia/Ho_Chi_Minh
 
-envFromSecret: snapnews-secrets   # ANTHROPIC_API_KEY from Doppler via ESO
+envFromSecret: snapnews-secrets
 
 persistence:
   enabled: true
   size: 2Gi
   mountPath: /data
+
+externalSecret:
+  enabled: true
+  keys:
+    - ANTHROPIC_API_KEY
 
 resources:
   requests: {cpu: 50m,  memory: 128Mi}

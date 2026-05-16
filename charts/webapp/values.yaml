@@ -32,3 +32,11 @@ persistence:
   size: 1Gi
   mountPath: /data
   storageClassName: ""   # "" = default StorageClass (local-path on k3s)
+
+# Optional ExternalSecret (Doppler → k8s Secret). When enabled, the rendered
+# Secret name is <release>-secrets; reference it via envFromSecret to inject.
+externalSecret:
+  enabled: false
+  storeName: doppler
+  refreshInterval: 1h
+  keys: []   # list of Doppler keys to mirror (same name on both sides)

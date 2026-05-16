@@ -49,8 +49,10 @@ export GHCR_TOKEN=ghp_xxx  # PAT: repo + read:packages
 
 # 2. Apply từng app
 kubectl apply -f apps/goshop/application.yaml
-kubectl apply -f apps/goshop/externalsecret.yaml
+kubectl apply -f apps/goshop/externalsecret.yaml   # only for goshop (chart không quản ES)
 kubectl apply -f apps/goshop/imageupdater.yaml
+
+kubectl apply -f apps/snapnews/application.yaml    # ES được chart webapp render → Argo sync
 ```
 
 ## Thêm app mới
