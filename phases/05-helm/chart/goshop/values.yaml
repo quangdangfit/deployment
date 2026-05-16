@@ -4,38 +4,34 @@ api:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop
-    tag: ""            # empty → fallback Chart.appVersion
+    tag: "master-a4e8ebe" # empty → fallback Chart.appVersion
     pullPolicy: IfNotPresent
   resources:
-    requests: { cpu: 100m, memory: 128Mi }
-    limits:   { cpu: 500m, memory: 512Mi }
-
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
 web:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop-web
-    tag: ""            # empty → fallback Chart.appVersion
+    tag: "master-a4e8ebe" # empty → fallback Chart.appVersion
     pullPolicy: IfNotPresent
   resources:
-    requests: { cpu: 10m, memory: 32Mi }
-    limits:   { cpu: 200m, memory: 128Mi }
-
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
 service:
   api:
-    type: ClusterIP    # BE nội bộ — FE proxy /api → BE
+    type: ClusterIP # BE nội bộ — FE proxy /api → BE
     httpPort: 8888
     grpcPort: 8889
   web:
-    type: ClusterIP    # ingress trỏ thẳng vào đây; KHÔNG cần NodePort khi đã có ingress
+    type: ClusterIP # ingress trỏ thẳng vào đây; KHÔNG cần NodePort khi đã có ingress
     port: 80
-
 ingress:
   enabled: true
   className: nginx
   clusterIssuer: letsencrypt-prod
   host: goshop.cunghoclaptrinh.online
   tlsSecretName: goshop-tls
-
 # Non-secret config cho BE. Secret keys (auth_secret, database_uri, redis_uri,
 # redis_password, stripe_*, smtp_user, smtp_password) lấy từ Doppler qua
 # ExternalSecret `goshop-secrets` (Phase 7).
