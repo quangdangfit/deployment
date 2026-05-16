@@ -1,0 +1,32 @@
+{{- if .Values.imageUpdater.enabled }}
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: {{ .Release.Name }}
+  namespace: argocd
+  labels: {{- include "goshop.labels" . | nindent 4 }}
+spec:
+  applicationRefs:
+    - namePattern: {{ .Release.Name }}
+      images:
+        - alias: api
+          imageName: {{ .Values.api.image.repository }}
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: {{ .Values.imageUpdater.allowTags | quote }}
+          manifestTargets:
+            helm: {name: api.image.repository, tag: api.image.tag}
+        - alias: web
+          imageName: {{ .Values.web.image.repository }}
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: {{ .Values.imageUpdater.allowTags | quote }}
+          manifestTargets:
+            helm: {name: web.image.repository, tag: web.image.tag}
+  writeBackConfig:
+    method: git
+    gitConfig:
+      repository: {{ .Values.imageUpdater.repo }}
+      branch: {{ .Values.imageUpdater.branch }}
+      writeBackTarget: "helmvalues:{{ .Values.imageUpdater.valuesPath }}"
+{{- end }}

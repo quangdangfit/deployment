@@ -48,3 +48,11 @@ config:
     host: ""
     port: 25
     emailFrom: no-reply@goshop.local
+
+# Optional ArgoCD Image Updater. CR rendered into ns argocd.
+imageUpdater:
+  enabled: false
+  allowTags: "regexp:^master-[0-9a-f]{7}$"
+  repo: https://github.com/quangdangfit/deployment
+  branch: main
+  valuesPath: ""   # repo-root absolute, e.g. /apps/goshop/values.yaml
