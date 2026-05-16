@@ -1,46 +1,36 @@
 # SnapNews — Next.js + SQLite (single replica, PVC-backed DB).
 replicaCount: 1
-
 image:
   repository: ghcr.io/quangdangfit/snapnews
-  tag: "main"
+  tag: "main-b1f84ce"
   pullPolicy: Always
-
 containerPort: 3000
-
 service:
   type: ClusterIP
-  port: 80   # ingress → svc:80 → pod:3000
-
+  port: 80 # ingress → svc:80 → pod:3000
 ingress:
   enabled: true
   className: nginx
   host: news.cunghoclaptrinh.online
   tlsSecretName: snapnews-tls
   clusterIssuer: letsencrypt-prod
-
 env:
   NODE_ENV: production
   DATABASE_URL: "file:/data/snapnews.db"
   TZ: Asia/Ho_Chi_Minh
-
 envFromSecret: snapnews-secrets
-
 persistence:
   enabled: true
   size: 2Gi
   mountPath: /data
-
 externalSecret:
   enabled: true
   keys:
-    - ANTHROPIC_API_KEY
-
+  - ANTHROPIC_API_KEY
 imageUpdater:
   enabled: true
   allowTags: "regexp:^main-[0-9a-f]{7}$"
   valuesPath: /apps/snapnews/values.yaml
-
 resources:
-  requests: {cpu: 50m,  memory: 128Mi}
-  limits:   {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {cpu: 500m, memory: 512Mi}
