@@ -16,11 +16,20 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
+          # /api/* → BE. PHẢI đặt trước path / (ingress-nginx match prefix dài hơn trước,
+          # nhưng để rõ ràng vẫn list trên trước).
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "goshop.api.fullname" . }}
+                port:
+                  number: {{ .Values.service.api.httpPort }}
+          # Còn lại → FE (SPA static).
           - path: /
             pathType: Prefix
             backend:
               service:
-                # Ingress trỏ vào FE; FE nginx proxy /api → BE service nội bộ.
                 name: {{ include "goshop.web.fullname" . }}
                 port:
                   number: {{ .Values.service.web.port }}
