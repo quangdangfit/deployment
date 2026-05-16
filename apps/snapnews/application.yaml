@@ -20,7 +20,7 @@ spec:
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: snapnews
+    namespace: default
   syncPolicy:
     automated: {prune: true, selfHeal: true}
     syncOptions:
