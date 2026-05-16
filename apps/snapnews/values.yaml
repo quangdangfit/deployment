@@ -36,6 +36,11 @@ externalSecret:
   keys:
     - ANTHROPIC_API_KEY
 
+imageUpdater:
+  enabled: true
+  allowTags: "regexp:^main-[0-9a-f]{7}$"
+  valuesPath: /apps/snapnews/values.yaml
+
 resources:
   requests: {cpu: 50m,  memory: 128Mi}
   limits:   {cpu: 500m, memory: 512Mi}

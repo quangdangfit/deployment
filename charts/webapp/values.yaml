@@ -40,3 +40,12 @@ externalSecret:
   storeName: doppler
   refreshInterval: 1h
   keys: []   # list of Doppler keys to mirror (same name on both sides)
+
+# Optional ArgoCD Image Updater. CR is rendered into ns `argocd`.
+# Requires CI to push tags matching allowTags pattern.
+imageUpdater:
+  enabled: false
+  allowTags: "regexp:^main-[0-9a-f]{7}$"
+  repo: https://github.com/quangdangfit/deployment
+  branch: main
+  valuesPath: ""   # repo-root absolute path, e.g. /apps/snapnews/values.yaml
