@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: goshop
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/quangdangfit/deployment
+      targetRevision: main
+      path: charts/goshop
+      helm:
+        valueFiles:
+          - $values/apps/goshop/values.yaml
+        parameters:
+          - {name: api.image.tag, value: master}
+          - {name: web.image.tag, value: master}
+    - repoURL: https://github.com/quangdangfit/deployment
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

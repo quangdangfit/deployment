@@ -1,0 +1,14 @@
+replicaCount: 1
+image:
+  repository: nginxdemos/hello
+  tag: "0.4-plain-text"
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 80
+ingress:
+  enabled: true
+  className: nginx
+  host: hello.cunghoclaptrinh.online
+  tlsSecretName: hello-tls
+  clusterIssuer: letsencrypt-prod

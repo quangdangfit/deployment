@@ -1,0 +1,6 @@
+apiVersion: v2
+name: webapp
+description: Generic single-service web app (Deployment + Service + optional Ingress).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

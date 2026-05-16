@@ -1,0 +1,29 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: goshop
+  namespace: argocd
+spec:
+  applicationRefs:
+    - namePattern: goshop
+      images:
+        - alias: api
+          imageName: ghcr.io/quangdangfit/goshop
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^master-[0-9a-f]{7}$"
+          manifestTargets:
+            helm: {name: api.image.repository, tag: api.image.tag}
+        - alias: web
+          imageName: ghcr.io/quangdangfit/goshop-web
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^master-[0-9a-f]{7}$"
+          manifestTargets:
+            helm: {name: web.image.repository, tag: web.image.tag}
+  writeBackConfig:
+    method: git
+    gitConfig:
+      repository: https://github.com/quangdangfit/deployment
+      branch: main
+      writeBackTarget: "helmvalues:/apps/goshop/values.yaml"

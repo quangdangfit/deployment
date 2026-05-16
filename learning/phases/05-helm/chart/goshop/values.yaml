@@ -1,0 +1,50 @@
+# Prod-only values.
+
+api:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/quangdangfit/goshop
+    tag: "master-b700ec1" # auto-bumped by argocd-image-updater
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+web:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/quangdangfit/goshop-web
+    tag: "master-b700ec1" # auto-bumped by argocd-image-updater
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+service:
+  api:
+    type: ClusterIP # BE nội bộ — FE proxy /api → BE
+    httpPort: 8888
+    grpcPort: 8889
+  web:
+    type: ClusterIP # ingress trỏ thẳng vào đây; KHÔNG cần NodePort khi đã có ingress
+    port: 80
+ingress:
+  enabled: true
+  className: nginx
+  clusterIssuer: letsencrypt-prod
+  host: goshop.cunghoclaptrinh.online
+  tlsSecretName: goshop-tls
+# Non-secret config cho BE. Secret keys (auth_secret, database_uri, redis_uri,
+# redis_password, stripe_*, smtp_user, smtp_password) lấy từ Doppler qua
+# ExternalSecret `goshop-secrets` (Phase 7).
+config:
+  environment: production
+  redis:
+    db: 0
+  cors:
+    allowedOrigins: "*"
+  rateLimit:
+    requests: 100
+    windowSeconds: 60
+  smtp:
+    host: ""
+    port: 25
+    emailFrom: no-reply@goshop.local

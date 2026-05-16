@@ -1,0 +1,26 @@
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+containerPort: 80
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  tlsSecretName: ""
+  clusterIssuer: letsencrypt-prod
+
+env: {}        # KEY: value pairs → injected as env vars
+envFromSecret: ""   # optional Secret name to envFrom
+
+resources:
+  requests: {cpu: 10m, memory: 32Mi}
+  limits: {cpu: 200m, memory: 128Mi}

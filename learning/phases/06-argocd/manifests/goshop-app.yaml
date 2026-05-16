@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/quangdangfit/deployment
     targetRevision: main
-    path: phases/05-helm/chart/goshop
+    path: learning/phases/05-helm/chart/goshop
     helm:
       valueFiles:
         - values.yaml

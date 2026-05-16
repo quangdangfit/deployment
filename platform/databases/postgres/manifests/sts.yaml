@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: data
+spec:
+  serviceName: postgres   # phải khớp tên headless Service ở trên
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        # postgres image chạy với UID 999. fsGroup khiến k8s chown volume mount sang group này
+        # → tránh "permission denied" khi init data dir.
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            # Inject toàn bộ keys của Secret thành env var: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+            # Image postgres:16 đọc các env var này khi init.
+            - secretRef:
+                name: postgres-credentials
+          env:
+            # PGDATA: di chuyển data dir vào subdir để Postgres không kêu "directory not empty"
+            # (vì lost+found tồn tại trên một số filesystem)
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "goshop", "-d", "goshop"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "goshop", "-d", "goshop"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    # StatefulSet sinh PVC cho TỪNG replica: data-postgres-0, data-postgres-1, ...
+    # PVC được giữ lại khi pod xoá → data persistent.
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path     # k3s bundled storage class
+        resources:
+          requests:
+            storage: 10Gi

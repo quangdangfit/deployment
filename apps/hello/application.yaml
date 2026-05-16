@@ -1,0 +1,27 @@
+# Sample app — dùng chart generic charts/webapp. Copy thư mục này để bootstrap app mới.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/quangdangfit/deployment
+      targetRevision: main
+      path: charts/webapp
+      helm:
+        valueFiles:
+          - $values/apps/hello/values.yaml
+    - repoURL: https://github.com/quangdangfit/deployment
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions:
+      - CreateNamespace=true

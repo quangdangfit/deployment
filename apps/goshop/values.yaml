@@ -1,0 +1,42 @@
+# Goshop prod values. Chart: charts/goshop. Tag auto-bumped by argocd-image-updater.
+api:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/quangdangfit/goshop
+    tag: "master-a4e8ebe"
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+web:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/quangdangfit/goshop-web
+    tag: "master-a4e8ebe"
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+service:
+  api:
+    type: ClusterIP
+    httpPort: 8888
+    grpcPort: 8889
+  web:
+    type: ClusterIP
+    port: 80
+ingress:
+  enabled: true
+  className: nginx
+  clusterIssuer: letsencrypt-prod
+  host: goshop.cunghoclaptrinh.online
+  tlsSecretName: goshop-tls
+config:
+  environment: production
+  redis: {db: 0}
+  cors: {allowedOrigins: "*"}
+  rateLimit: {requests: 100, windowSeconds: 60}
+  smtp:
+    host: ""
+    port: 25
+    emailFrom: no-reply@goshop.local
