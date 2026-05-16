@@ -21,6 +21,8 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: default
+  # ImageUpdater CR (rendered by chart) lives in ns argocd, not destination ns.
+  # Cho phép Argo manage resource ngoài destination namespace.
   syncPolicy:
     automated: {prune: true, selfHeal: true}
     syncOptions:

@@ -1,0 +1,27 @@
+{{- if .Values.imageUpdater.enabled }}
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: {{ include "webapp.name" . }}
+  namespace: argocd   # AIU CRs phải sống ở ns argocd
+  labels: {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  applicationRefs:
+    - namePattern: {{ include "webapp.name" . }}
+      images:
+        - alias: app
+          imageName: {{ .Values.image.repository }}
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: {{ .Values.imageUpdater.allowTags | quote }}
+          manifestTargets:
+            helm:
+              name: image.repository
+              tag: image.tag
+  writeBackConfig:
+    method: git
+    gitConfig:
+      repository: {{ .Values.imageUpdater.repo }}
+      branch: {{ .Values.imageUpdater.branch }}
+      writeBackTarget: "helmvalues:{{ .Values.imageUpdater.valuesPath }}"
+{{- end }}

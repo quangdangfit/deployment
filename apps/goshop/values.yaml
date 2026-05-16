@@ -40,3 +40,8 @@ config:
     host: ""
     port: 25
     emailFrom: no-reply@goshop.local
+
+imageUpdater:
+  enabled: true
+  allowTags: "regexp:^master-[0-9a-f]{7}$"
+  valuesPath: /apps/goshop/values.yaml
