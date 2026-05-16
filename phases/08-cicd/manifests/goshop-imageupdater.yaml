@@ -13,8 +13,6 @@ spec:
           commonUpdateSettings:
             updateStrategy: newest-build
             allowTags: "regexp:^master-[0-9a-f]{7}$"
-            platforms:
-              - linux/amd64
           manifestTargets:
             helm:
               name: api.image.repository
@@ -24,8 +22,6 @@ spec:
           commonUpdateSettings:
             updateStrategy: newest-build
             allowTags: "regexp:^master-[0-9a-f]{7}$"
-            platforms:
-              - linux/amd64
           manifestTargets:
             helm:
               name: web.image.repository
