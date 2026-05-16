@@ -4,7 +4,7 @@ api:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop
-    tag: "master-a4e8ebe"   # auto-bumped by argocd-image-updater
+    tag: "master-a4e8ebe" # auto-bumped by argocd-image-updater
     pullPolicy: Always
   resources:
     requests: {cpu: 100m, memory: 128Mi}
@@ -13,7 +13,7 @@ web:
   replicaCount: 2
   image:
     repository: ghcr.io/quangdangfit/goshop-web
-    tag: "master-a4e8ebe"   # auto-bumped by argocd-image-updater
+    tag: "master-a4e8ebe" # auto-bumped by argocd-image-updater
     pullPolicy: Always
   resources:
     requests: {cpu: 10m, memory: 32Mi}
