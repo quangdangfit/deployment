@@ -4,29 +4,19 @@ metadata:
   name: {{ include "goshop.api.fullname" . }}-config
   labels: {{- include "goshop.labels" . | nindent 4 }}
 data:
+  # Format dotenv (KEY=VALUE) — goshop dùng godotenv.Load() rồi caarlos0/env.Parse().
+  # Chỉ chứa NON-secret config. Secret (auth_secret, database_uri, redis_uri,
+  # redis_password, stripe_*, smtp_user, smtp_password) lấy từ Secret
+  # `goshop-secrets` qua envFrom (Phase 7 — Doppler + ESO). Env var luôn ghi đè
+  # giá trị từ godotenv (caarlos0/env đọc os.Getenv).
   config.yaml: |
-    environment: {{ .Values.config.environment }}
-    http_port: {{ .Values.service.api.httpPort }}
-    grpc_port: {{ .Values.service.api.grpcPort }}
-    auth_secret: {{ .Values.config.authSecret | quote }}
-
-    database_uri: {{ .Values.config.database.uri | quote }}
-
-    redis_uri: {{ .Values.config.redis.uri | quote }}
-    redis_password: {{ .Values.config.redis.password | quote }}
-    redis_db: {{ .Values.config.redis.db }}
-
-    cors_allowed_origins: {{ .Values.config.cors.allowedOrigins | quote }}
-    rate_limit_requests: {{ .Values.config.rateLimit.requests }}
-    rate_limit_window_seconds: {{ .Values.config.rateLimit.windowSeconds }}
-
-    stripe_secret_key: {{ .Values.config.stripe.secretKey | quote }}
-    stripe_webhook_secret: {{ .Values.config.stripe.webhookSecret | quote }}
-    stripe_publishable_key: {{ .Values.config.stripe.publishableKey | quote }}
-    stripe_api_base:
-
-    smtp_host: {{ .Values.config.smtp.host | quote }}
-    smtp_port: {{ .Values.config.smtp.port }}
-    smtp_user: {{ .Values.config.smtp.user | quote }}
-    smtp_password: {{ .Values.config.smtp.password | quote }}
-    email_from: {{ .Values.config.smtp.emailFrom | quote }}
+    environment={{ .Values.config.environment }}
+    http_port={{ .Values.service.api.httpPort }}
+    grpc_port={{ .Values.service.api.grpcPort }}
+    redis_db={{ .Values.config.redis.db }}
+    cors_allowed_origins={{ .Values.config.cors.allowedOrigins }}
+    rate_limit_requests={{ .Values.config.rateLimit.requests }}
+    rate_limit_window_seconds={{ .Values.config.rateLimit.windowSeconds }}
+    smtp_host={{ .Values.config.smtp.host }}
+    smtp_port={{ .Values.config.smtp.port }}
+    email_from={{ .Values.config.smtp.emailFrom }}

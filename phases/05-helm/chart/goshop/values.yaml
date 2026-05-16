@@ -36,28 +36,19 @@ ingress:
   host: goshop.cunghoclaptrinh.online
   tlsSecretName: goshop-tls
 
-# Config app cho BE. Phase 7 tách secrets sang ExternalSecret.
+# Non-secret config cho BE. Secret keys (auth_secret, database_uri, redis_uri,
+# redis_password, stripe_*, smtp_user, smtp_password) lấy từ Doppler qua
+# ExternalSecret `goshop-secrets` (Phase 7).
 config:
   environment: production
-  authSecret: change-me-prod-strong-secret
-  database:
-    uri: postgres://goshop:goshop_dev@postgres.data:5432/goshop?sslmode=disable
   redis:
-    uri: redis.data:6379
-    password: redis_dev
     db: 0
   cors:
     allowedOrigins: "*"
   rateLimit:
     requests: 100
     windowSeconds: 60
-  stripe:
-    secretKey: sk_test_dummy
-    webhookSecret: whsec_dummy
-    publishableKey: pk_test_dummy
   smtp:
     host: ""
     port: 25
-    user: ""
-    password: ""
     emailFrom: no-reply@goshop.local

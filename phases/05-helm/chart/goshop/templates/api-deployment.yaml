@@ -30,6 +30,9 @@ spec:
           env:
             - name: CONFIG_FILE
               value: /app/config.yaml
+          envFrom:
+            - secretRef:
+                name: goshop-secrets    # Doppler → ESO: auth_secret, stripe_*, smtp_*, database_uri, redis_uri, redis_password
           resources: {{- toYaml .Values.api.resources | nindent 12 }}
           readinessProbe:
             tcpSocket: { port: http }
