@@ -21,7 +21,7 @@ charts/          # Helm chart library (reusable templates)
 
 apps/            # Mỗi app 1 thư mục — chỉ values + Argo CD Application
   goshop/        # application.yaml, values.yaml, externalsecret.yaml, imageupdater.yaml
-  hello/         # Sample app dùng charts/webapp — copy thư mục này để bootstrap app mới
+  snapnews/      # Next.js + SQLite, dùng charts/webapp (persistence on)
 
 learning/        # Roadmap 9 phases (00..09) — đọc tham khảo để hiểu từng layer
   phases/
@@ -55,7 +55,7 @@ kubectl apply -f apps/goshop/imageupdater.yaml
 
 ## Thêm app mới
 
-Copy `apps/hello/` → `apps/<name>/`, sửa `values.yaml` + tên trong `application.yaml`. Nếu cần secrets/auto image bump, copy thêm `externalsecret.yaml` / `imageupdater.yaml` từ `apps/goshop/`.
+Copy `apps/snapnews/` → `apps/<name>/`, sửa `values.yaml` + tên trong `application.yaml`. Nếu cần auto image bump, copy thêm `imageupdater.yaml` từ `apps/goshop/`.
 
 ## Learning
 

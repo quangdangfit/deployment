@@ -24,3 +24,11 @@ envFromSecret: ""   # optional Secret name to envFrom
 resources:
   requests: {cpu: 10m, memory: 32Mi}
   limits: {cpu: 200m, memory: 128Mi}
+
+# Optional persistent volume (for SQLite, file cache, etc).
+# Enables strategy: Recreate so the single PVC isn't double-mounted on rollout.
+persistence:
+  enabled: false
+  size: 1Gi
+  mountPath: /data
+  storageClassName: ""   # "" = default StorageClass (local-path on k3s)
