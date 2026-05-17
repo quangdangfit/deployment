@@ -18,6 +18,11 @@ ingress:
   host: goshop.cunghoclaptrinh.online
   tlsSecretName: goshop-tls
   clusterIssuer: letsencrypt-prod
+  extraPaths:
+    - path: /api
+      pathType: Prefix
+      serviceName: goshop-api
+      servicePort: 8888
 
 probes:
   enabled: true
