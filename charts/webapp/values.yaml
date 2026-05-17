@@ -7,9 +7,17 @@ image:
 
 containerPort: 80
 
+# Optional extra container ports (e.g. gRPC). Each entry becomes a
+# containerPort on the pod AND a port on the Service.
+# Example: [{name: grpc, containerPort: 8889}]
+extraPorts: []
+
 service:
   type: ClusterIP
   port: 80
+  # Optional extra Service ports — paired with extraPorts above.
+  # Example: [{name: grpc, port: 8889, targetPort: grpc}]
+  extraPorts: []
 
 ingress:
   enabled: false
@@ -25,6 +33,15 @@ resources:
   requests: {cpu: 10m, memory: 32Mi}
   limits: {cpu: 200m, memory: 128Mi}
 
+# Optional probes. Default off (back-compat). Set type: tcp or http.
+probes:
+  enabled: false
+  type: tcp                  # tcp | http
+  port: 0                    # 0 → falls back to containerPort
+  path: /                    # only used when type=http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
 # Optional persistent volume (for SQLite, file cache, etc).
 # Enables strategy: Recreate so the single PVC isn't double-mounted on rollout.
 persistence:
@@ -32,6 +49,14 @@ persistence:
   size: 1Gi
   mountPath: /data
   storageClassName: ""   # "" = default StorageClass (local-path on k3s)
+
+# Optional config file rendered as a ConfigMap and mounted into the container
+# as a single file (subPath mount). For app config that lives outside env vars.
+configFile:
+  enabled: false
+  mountPath: /app/config.yaml
+  subPath: config.yaml
+  content: ""
 
 # Optional ExternalSecret (Doppler → k8s Secret). When enabled, the rendered
 # Secret name is <release>-secrets; reference it via envFromSecret to inject.

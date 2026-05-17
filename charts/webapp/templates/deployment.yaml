@@ -14,13 +14,22 @@ spec:
   template:
     metadata:
       labels: {{- include "webapp.selectorLabels" . | nindent 8 }}
+      {{- if .Values.configFile.enabled }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- end }}
     spec:
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.containerPort }}
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+            {{- range .Values.extraPorts }}
+            - name: {{ .name }}
+              containerPort: {{ .containerPort }}
+            {{- end }}
           {{- if .Values.env }}
           env:
             {{- range $k, $v := .Values.env }}
@@ -33,15 +42,49 @@ spec:
             - secretRef:
                 name: {{ .Values.envFromSecret }}
           {{- end }}
-          {{- if .Values.persistence.enabled }}
+          {{- if or .Values.persistence.enabled .Values.configFile.enabled }}
           volumeMounts:
+            {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+            {{- if .Values.configFile.enabled }}
+            - name: config
+              mountPath: {{ .Values.configFile.mountPath }}
+              subPath: {{ .Values.configFile.subPath }}
+              readOnly: true
+            {{- end }}
+          {{- end }}
+          {{- if .Values.probes.enabled }}
+          {{- $port := ternary (int .Values.containerPort) (int .Values.probes.port) (eq (int .Values.probes.port) 0) }}
+          readinessProbe:
+            {{- if eq .Values.probes.type "http" }}
+            httpGet: { path: {{ .Values.probes.path }}, port: {{ $port }} }
+            {{- else }}
+            tcpSocket: { port: {{ $port }} }
+            {{- end }}
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+          livenessProbe:
+            {{- if eq .Values.probes.type "http" }}
+            httpGet: { path: {{ .Values.probes.path }}, port: {{ $port }} }
+            {{- else }}
+            tcpSocket: { port: {{ $port }} }
+            {{- end }}
+            initialDelaySeconds: {{ mul .Values.probes.initialDelaySeconds 3 }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
           {{- end }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.persistence.enabled }}
+      {{- if or .Values.persistence.enabled .Values.configFile.enabled }}
       volumes:
+        {{- if .Values.persistence.enabled }}
         - name: data
           persistentVolumeClaim:
             claimName: {{ include "webapp.name" . }}-data
+        {{- end }}
+        {{- if .Values.configFile.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "webapp.name" . }}-config
+        {{- end }}
       {{- end }}

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: goshop
+  name: goshop-web
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,13 +10,11 @@ spec:
   sources:
     - repoURL: https://github.com/quangdangfit/deployment
       targetRevision: main
-      path: charts/goshop
+      path: charts/webapp
       helm:
+        releaseName: goshop-web
         valueFiles:
-          - $values/apps/goshop/values.yaml
-        parameters:
-          - {name: api.image.tag, value: master}
-          - {name: web.image.tag, value: master}
+          - $values/apps/goshop-web/values.yaml
     - repoURL: https://github.com/quangdangfit/deployment
       targetRevision: main
       ref: values
@@ -28,13 +26,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-  ignoreDifferences:
-    - group: external-secrets.io
-      kind: ExternalSecret
-      jqPathExpressions:
-        - .spec.data[].remoteRef.conversionStrategy
-        - .spec.data[].remoteRef.decodingStrategy
-        - .spec.data[].remoteRef.metadataPolicy
-        - .spec.data[].remoteRef.nullBytePolicy
-      jsonPointers:
-        - /spec/target/deletionPolicy
