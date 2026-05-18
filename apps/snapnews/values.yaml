@@ -2,7 +2,7 @@
 replicaCount: 1
 image:
   repository: ghcr.io/quangdangfit/snapnews
-  tag: "main-ee24919"
+  tag: "main-4533d32"
   pullPolicy: Always
 containerPort: 3000
 service:
