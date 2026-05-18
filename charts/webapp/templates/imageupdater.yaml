@@ -23,5 +23,5 @@ spec:
     gitConfig:
       repository: {{ .Values.imageUpdater.repo }}
       branch: {{ .Values.imageUpdater.branch }}
-      writeBackTarget: "helmvalues:{{ .Values.imageUpdater.valuesPath }}"
+      writeBackTarget: "helmvalues:/{{ .Values.imageUpdater.valuesPath }}"
 {{- end }}
