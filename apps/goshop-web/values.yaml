@@ -33,7 +33,7 @@ probes:
 imageUpdater:
   enabled: true
   allowTags: "regexp:^master-[0-9a-f]{7,40}$"
-  repo: git@github.com:quangdangfit/deployment.git
+  repo: https://github.com/quangdangfit/deployment
   branch: main
   valuesPath: apps/goshop-web/values.yaml
 
