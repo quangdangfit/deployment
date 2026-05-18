@@ -1,30 +1,22 @@
 # goshop-api — Go BE, ClusterIP internal. FE proxies /api → service "goshop-api".
 replicaCount: 2
-
 image:
   repository: ghcr.io/quangdangfit/goshop
-  tag: "master-b700ec1"   # auto-bumped by argocd-image-updater
+  tag: "master-e1b9916" # auto-bumped by argocd-image-updater
   pullPolicy: Always
-
 containerPort: 8888
-
 extraPorts:
-  - { name: grpc, containerPort: 8889 }
-
+- {name: grpc, containerPort: 8889}
 service:
   type: ClusterIP
   port: 8888
   extraPorts:
-    - { name: grpc, port: 8889, targetPort: grpc }
-
+  - {name: grpc, port: 8889, targetPort: grpc}
 ingress:
-  enabled: false   # BE nội bộ — không expose ra ngoài
-
+  enabled: false # BE nội bộ — không expose ra ngoài
 env:
   CONFIG_FILE: /app/config.yaml
-
 envFromSecret: goshop-secrets
-
 configFile:
   enabled: true
   mountPath: /app/config.yaml
@@ -40,22 +32,18 @@ configFile:
     smtp_host=
     smtp_port=25
     email_from=no-reply@goshop.local
-
 externalSecret:
-  enabled: false   # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
-
+  enabled: false # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
 probes:
   enabled: true
   type: tcp
   port: 8888
-
 imageUpdater:
   enabled: true
   allowTags: "regexp:^master-[0-9a-f]{7,40}$"
   repo: https://github.com/quangdangfit/deployment
   branch: main
   valuesPath: apps/goshop-api/values.yaml
-
 resources:
   requests: {cpu: 100m, memory: 128Mi}
-  limits:   {cpu: 500m, memory: 512Mi}
+  limits: {cpu: 500m, memory: 512Mi}
