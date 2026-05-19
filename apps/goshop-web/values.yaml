@@ -1,17 +1,13 @@
 # goshop-web — FE nginx, public ingress. Proxies /api → goshop-api (intra-cluster).
 replicaCount: 1
-
 image:
   repository: ghcr.io/quangdangfit/goshop-web
-  tag: "master-a174073"
+  tag: "master-b700ec1"
   pullPolicy: Always
-
 containerPort: 80
-
 service:
   type: ClusterIP
   port: 80
-
 ingress:
   enabled: true
   className: nginx
@@ -19,24 +15,21 @@ ingress:
   tlsSecretName: goshop-tls
   clusterIssuer: letsencrypt-prod
   extraPaths:
-    - path: /api
-      pathType: Prefix
-      serviceName: goshop-api
-      servicePort: 8888
-
+  - path: /api
+    pathType: Prefix
+    serviceName: goshop-api
+    servicePort: 8888
 probes:
   enabled: true
   type: http
   path: /
   port: 80
-
 imageUpdater:
   enabled: true
   allowTags: "regexp:^master-[0-9a-f]{7,40}$"
   repo: https://github.com/quangdangfit/deployment
   branch: main
   valuesPath: apps/goshop-web/values.yaml
-
 resources:
-  requests: {cpu: 10m,  memory: 32Mi}
-  limits:   {cpu: 200m, memory: 128Mi}
+  requests: {cpu: 10m, memory: 32Mi}
+  limits: {cpu: 200m, memory: 128Mi}
