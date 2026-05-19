@@ -22,21 +22,25 @@ configFile:
   mountPath: /app/config.yaml
   subPath: config.yaml
   content: |
-    environment=production
-    http_port=8888
-    grpc_port=8889
-    redis_db=0
-    cors_allowed_origins=*
-    rate_limit_requests=100
-    rate_limit_window_seconds=60
-    smtp_host=
-    smtp_port=25
-    email_from=no-reply@goshop.local
-    oidc_issuer=https://auth.cunghoclaptrinh.online/application/o/goshop/
-    oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
-    oidc_post_logout_url=https://goshop.cunghoclaptrinh.online/
-    session_cookie_name=goshop_session
-    session_cookie_domain=goshop.cunghoclaptrinh.online
+    environment: production
+    http_port: 8888
+    grpc_port: 8889
+    redis_db: 0
+    cors_allowed_origins: "*"
+    rate_limit_requests: 100
+    rate_limit_window_seconds: 60
+    smtp_host: ""
+    smtp_port: 25
+    email_from: no-reply@goshop.local
+
+    # Auth: chuyển sang OIDC (Authentik). Bỏ jwt password-based cũ.
+    auth_mode: oidc
+    oidc_issuer: https://auth.cunghoclaptrinh.online/application/o/goshop-api/
+    oidc_client_id: goshop-api-client
+    # oidc_client_secret: được inject qua env OIDC_CLIENT_SECRET từ goshop-secrets.
+    oidc_redirect_url: https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
+    oidc_jwks_url: https://auth.cunghoclaptrinh.online/application/o/goshop-api/jwks/
+    oidc_scopes: openid,email,profile
 externalSecret:
   enabled: false # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
 probes:
