@@ -47,13 +47,14 @@ server:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
     hosts:
-      - host: auth.cunghoclaptrinh.online
-        paths:
-          - path: /
-            pathType: Prefix
+      - auth.cunghoclaptrinh.online
+    paths:
+      - /
+    pathType: Prefix
     tls:
-      - hosts: [auth.cunghoclaptrinh.online]
-        secretName: authentik-tls
+      - secretName: authentik-tls
+        hosts:
+          - auth.cunghoclaptrinh.online
 
 worker:
   replicas: 1
