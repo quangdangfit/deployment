@@ -1,6 +1,31 @@
-# Helm values for goauthentik/authentik
+# Helm values for goauthentik/authentik (chart 2026.x)
 # Chart: https://charts.goauthentik.io
 # Reference: https://docs.goauthentik.io/install-config/install/kubernetes
+#
+# Chart 2026.x đã bỏ bundled Redis subchart.
+# → Redis được deploy thẳng trong `additionalObjects` dưới đây.
+
+global:
+  # Inject env cho cả server + worker từ secret authentik-secrets (ExternalSecret sync từ Doppler).
+  # Lưu ý: AUTHENTIK_POSTGRES_PASSWORD trong Doppler được map sang env name
+  # AUTHENTIK_POSTGRESQL__PASSWORD (đúng pattern Authentik đọc config).
+  env:
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef: {name: authentik-secrets, key: AUTHENTIK_SECRET_KEY}
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef: {name: authentik-secrets, key: AUTHENTIK_POSTGRES_PASSWORD}
+    - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: authentik-secrets, key: AUTHENTIK_BOOTSTRAP_PASSWORD}
+    - name: AUTHENTIK_BOOTSTRAP_TOKEN
+      valueFrom:
+        secretKeyRef: {name: authentik-secrets, key: AUTHENTIK_BOOTSTRAP_TOKEN}
+    - name: AUTHENTIK_REDIS__HOST
+      value: authentik-redis
+    - name: AUTHENTIK_REDIS__PORT
+      value: "6379"
 
 authentik:
   error_reporting:
@@ -10,34 +35,6 @@ authentik:
     port: 5432
     name: authentik
     user: authentik
-  redis:
-    host: authentik-redis-master
-    password: ""
-
-# Inject secrets từ ExternalSecret (authentik-secrets) thành env cho cả server + worker.
-# Authentik đọc AUTHENTIK_SECRET_KEY, AUTHENTIK_POSTGRESQL__PASSWORD, AUTHENTIK_BOOTSTRAP_PASSWORD,
-# AUTHENTIK_BOOTSTRAP_TOKEN từ env.
-env:
-  AUTHENTIK_SECRET_KEY:
-    valueFrom:
-      secretKeyRef:
-        name: authentik-secrets
-        key: AUTHENTIK_SECRET_KEY
-  AUTHENTIK_POSTGRESQL__PASSWORD:
-    valueFrom:
-      secretKeyRef:
-        name: authentik-secrets
-        key: AUTHENTIK_POSTGRES_PASSWORD
-  AUTHENTIK_BOOTSTRAP_PASSWORD:
-    valueFrom:
-      secretKeyRef:
-        name: authentik-secrets
-        key: AUTHENTIK_BOOTSTRAP_PASSWORD
-  AUTHENTIK_BOOTSTRAP_TOKEN:
-    valueFrom:
-      secretKeyRef:
-        name: authentik-secrets
-        key: AUTHENTIK_BOOTSTRAP_TOKEN
 
 server:
   replicas: 1
@@ -64,20 +61,62 @@ worker:
     requests: {cpu: 100m, memory: 256Mi}
     limits:   {cpu: 500m, memory: 512Mi}
 
-# Redis subchart (Bitnami) đi kèm — tách riêng để giảm blast radius khỏi Redis dùng chung.
-redis:
-  enabled: true
-  architecture: standalone
-  auth:
-    enabled: false
-  master:
-    persistence:
-      enabled: true
-      size: 1Gi
-    resources:
-      requests: {cpu: 50m, memory: 64Mi}
-      limits:   {cpu: 200m, memory: 256Mi}
-
 # Tắt postgres subchart, dùng external postgres trong namespace data.
 postgresql:
   enabled: false
+
+# Redis riêng cho Authentik (chart 2026.x không bundle Redis).
+# Deployment + Service + PVC inline qua additionalObjects.
+additionalObjects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: authentik-redis-data
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 1Gi
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: authentik-redis
+      labels: {app: authentik-redis}
+    spec:
+      replicas: 1
+      strategy: {type: Recreate}
+      selector:
+        matchLabels: {app: authentik-redis}
+      template:
+        metadata:
+          labels: {app: authentik-redis}
+        spec:
+          containers:
+            - name: redis
+              image: redis:7-alpine
+              args: ["redis-server", "--appendonly", "yes"]
+              ports:
+                - {name: redis, containerPort: 6379}
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits:   {cpu: 200m, memory: 256Mi}
+              volumeMounts:
+                - {name: data, mountPath: /data}
+              readinessProbe:
+                tcpSocket: {port: 6379}
+                initialDelaySeconds: 5
+                periodSeconds: 10
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: authentik-redis-data
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: authentik-redis
+      labels: {app: authentik-redis}
+    spec:
+      type: ClusterIP
+      selector: {app: authentik-redis}
+      ports:
+        - {name: redis, port: 6379, targetPort: 6379}
