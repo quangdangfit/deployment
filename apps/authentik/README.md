@@ -33,7 +33,7 @@ GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
 
 - Provider name: `goshop-oidc`
 - Application slug: `goshop`
-- Redirect URI: `https://goshop.cunghoclaptrinh.online/api/auth/callback`
+- Redirect URI: `https://goshop.cunghoclaptrinh.online/api/v1/auth/callback`
 - Scopes: `openid`, `profile`, `email`, `goshop-groups`
 - Groups: `goshop-admin`, `goshop-user`
 

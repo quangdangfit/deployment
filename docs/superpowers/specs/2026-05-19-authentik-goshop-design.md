@@ -73,7 +73,7 @@ CREATE DATABASE authentik OWNER authentik;
    - Client type: Confidential
    - Authorization flow: default-provider-authorization-explicit-consent (hoặc implicit)
    - Signing key: default
-   - Redirect URI: `https://goshop.cunghoclaptrinh.online/api/auth/callback`
+   - Redirect URI: `https://goshop.cunghoclaptrinh.online/api/v1/auth/callback`
    - Scopes: `openid`, `profile`, `email`, `goshop-groups` (custom scope mapping → claim `groups`)
 3. Tạo **Application** "Goshop", gắn provider trên, slug `goshop`.
 4. Tạo **Groups**: `goshop-admin`, `goshop-user`. Gán user qua group.
@@ -85,10 +85,10 @@ CREATE DATABASE authentik OWNER authentik;
 
 ### 5.1 Endpoints mới
 
-- `GET /api/auth/login` — generate state + PKCE verifier, lưu vào cookie tạm (HttpOnly, short TTL), 302 tới Authentik `/application/o/authorize/`.
-- `GET /api/auth/callback` — verify state, exchange code → tokens (access + id_token + refresh) tại Authentik token endpoint, verify id_token RS256 qua JWKS, JIT-provision user trong DB goshop, tạo session cookie HttpOnly Secure SameSite=Lax, redirect về `/`.
-- `POST /api/auth/logout` — xóa session cookie + redirect tới Authentik end-session endpoint.
-- `GET /api/auth/me` — trả thông tin user hiện tại từ session.
+- `GET /api/v1/auth/login` — generate state + PKCE verifier, lưu vào cookie tạm (HttpOnly, short TTL), 302 tới Authentik `/application/o/authorize/`.
+- `GET /api/v1/auth/callback` — verify state, exchange code → tokens (access + id_token + refresh) tại Authentik token endpoint, verify id_token RS256 qua JWKS, JIT-provision user trong DB goshop, tạo session cookie HttpOnly Secure SameSite=Lax, redirect về `/`.
+- `POST /api/v1/auth/logout` — xóa session cookie + redirect tới Authentik end-session endpoint.
+- `GET /api/v1/auth/me` — trả thông tin user hiện tại từ session.
 
 ### 5.2 Middleware
 
@@ -101,7 +101,7 @@ Dùng Redis hiện có (namespace `data`) — key prefix `goshop:session:<sid>`,
 
 ### 5.4 Code cần bỏ
 
-- Toàn bộ handler `/api/auth/login` (password-based), `/api/auth/register`, password hashing logic.
+- Toàn bộ handler `/api/v1/auth/login` (password-based), `/api/v1/auth/register`, password hashing logic.
 - Bảng `users.password_hash` → giữ schema nhưng không dùng (cleanup sau khi migrate xong).
 
 ### 5.5 User mapping
@@ -114,7 +114,7 @@ JIT provisioning: lần đầu user OIDC login, nếu `sub` chưa có trong bả
 oidc_issuer=https://auth.cunghoclaptrinh.online/application/o/goshop/
 oidc_client_id=<from secret>
 oidc_client_secret=<from secret>
-oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/auth/callback
+oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
 oidc_post_logout_url=https://goshop.cunghoclaptrinh.online/
 session_cookie_name=goshop_session
 session_cookie_domain=goshop.cunghoclaptrinh.online
@@ -124,8 +124,8 @@ Thêm vào `goshop-secrets` ExternalSecret: `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRE
 
 ## 6. Tích hợp goshop-web (FE)
 
-- Login button → `window.location = "/api/auth/login"`.
-- Logout button → POST `/api/auth/logout`.
+- Login button → `window.location = "/api/v1/auth/login"`.
+- Logout button → POST `/api/v1/auth/logout`.
 - Bỏ form login/register, bỏ logic lưu JWT trong localStorage.
 - Gọi API với `credentials: 'include'` để gửi session cookie.
 

@@ -487,7 +487,7 @@ Vào `Applications → Providers → Create → OAuth2/OpenID Provider`:
   - Client type: `Confidential`
   - Client ID: để Authentik auto-generate, copy lại sau
   - Client Secret: auto-generate, copy lại sau
-  - Redirect URIs (strict mode): `https://goshop.cunghoclaptrinh.online/api/auth/callback`
+  - Redirect URIs (strict mode): `https://goshop.cunghoclaptrinh.online/api/v1/auth/callback`
   - Signing key: chọn cert ở Step 1
 - Advanced protocol settings → Scopes: chọn `openid`, `email`, `profile`, và `goshop-groups` (scope mapping vừa tạo)
 - Subject mode: `Based on the User's hashed ID` (hoặc `username` — tùy preference; UUID an toàn hơn)
@@ -580,7 +580,7 @@ GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
 
 - Provider name: `goshop-oidc`
 - Application slug: `goshop`
-- Redirect URI: `https://goshop.cunghoclaptrinh.online/api/auth/callback`
+- Redirect URI: `https://goshop.cunghoclaptrinh.online/api/v1/auth/callback`
 - Scopes: `openid`, `profile`, `email`, `goshop-groups`
 - Groups: `goshop-admin`, `goshop-user`
 
@@ -622,7 +622,7 @@ Mở URL (thay `<CLIENT_ID>`):
 https://auth.cunghoclaptrinh.online/application/o/authorize/?response_type=code&client_id=<CLIENT_ID>&redirect_uri=https%3A%2F%2Fgoshop.cunghoclaptrinh.online%2Fapi%2Fauth%2Fcallback&scope=openid+profile+email+goshop-groups&state=test
 ```
 
-Expected: redirect tới Authentik login → sau khi login (akadmin hoặc test user), redirect tới `goshop.cunghoclaptrinh.online/api/auth/callback?code=...&state=test` (sẽ 404 vì BE chưa có endpoint, OK ở phase này).
+Expected: redirect tới Authentik login → sau khi login (akadmin hoặc test user), redirect tới `goshop.cunghoclaptrinh.online/api/v1/auth/callback?code=...&state=test` (sẽ 404 vì BE chưa có endpoint, OK ở phase này).
 
 - [ ] **Step 2: Verify code response**
 
@@ -639,7 +639,7 @@ Expected: có cả 2 query params → flow OIDC từ Authentik hoạt động đ
 Sau khi Phase 1 này done, plan kế tiếp sẽ được viết trong repo `/Users/quangdang/Developers/src/quangdangfit/goshop`:
 
 1. Implement OIDC client trong `goshop-api` (Go): authorize URL builder, callback handler, token exchange, JWKS verify, JIT user provisioning, session store qua Redis, RBAC middleware đọc `groups` claim.
-2. Update `goshop-web`: bỏ form login/register, thêm login button → `/api/auth/login`, logout button.
+2. Update `goshop-web`: bỏ form login/register, thêm login button → `/api/v1/auth/login`, logout button.
 3. Cập nhật `apps/goshop-api/externalsecret.yaml` ở deployment repo: thêm 3 keys `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_ISSUER` (đã có sẵn ở Doppler từ Task 9 Step 7).
 4. Cập nhật `apps/goshop-api/values.yaml`: thêm env `OIDC_*` từ secret.
 5. Migrate user cũ (quyết định JIT vs bulk import).
