@@ -32,6 +32,11 @@ configFile:
     smtp_host=
     smtp_port=25
     email_from=no-reply@goshop.local
+    oidc_issuer=https://auth.cunghoclaptrinh.online/application/o/goshop/
+    oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
+    oidc_post_logout_url=https://goshop.cunghoclaptrinh.online/
+    session_cookie_name=goshop_session
+    session_cookie_domain=goshop.cunghoclaptrinh.online
 externalSecret:
   enabled: false # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
 probes:
