@@ -1,0 +1,83 @@
+# Helm values for goauthentik/authentik
+# Chart: https://charts.goauthentik.io
+# Reference: https://docs.goauthentik.io/install-config/install/kubernetes
+
+authentik:
+  error_reporting:
+    enabled: false
+  postgresql:
+    host: postgres.data.svc.cluster.local
+    port: 5432
+    name: authentik
+    user: authentik
+  redis:
+    host: authentik-redis-master
+    password: ""
+
+# Inject secrets từ ExternalSecret (authentik-secrets) thành env cho cả server + worker.
+# Authentik đọc AUTHENTIK_SECRET_KEY, AUTHENTIK_POSTGRESQL__PASSWORD, AUTHENTIK_BOOTSTRAP_PASSWORD,
+# AUTHENTIK_BOOTSTRAP_TOKEN từ env.
+env:
+  AUTHENTIK_SECRET_KEY:
+    valueFrom:
+      secretKeyRef:
+        name: authentik-secrets
+        key: AUTHENTIK_SECRET_KEY
+  AUTHENTIK_POSTGRESQL__PASSWORD:
+    valueFrom:
+      secretKeyRef:
+        name: authentik-secrets
+        key: AUTHENTIK_POSTGRES_PASSWORD
+  AUTHENTIK_BOOTSTRAP_PASSWORD:
+    valueFrom:
+      secretKeyRef:
+        name: authentik-secrets
+        key: AUTHENTIK_BOOTSTRAP_PASSWORD
+  AUTHENTIK_BOOTSTRAP_TOKEN:
+    valueFrom:
+      secretKeyRef:
+        name: authentik-secrets
+        key: AUTHENTIK_BOOTSTRAP_TOKEN
+
+server:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 384Mi}
+    limits:   {cpu: 600m, memory: 768Mi}
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: auth.cunghoclaptrinh.online
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts: [auth.cunghoclaptrinh.online]
+        secretName: authentik-tls
+
+worker:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits:   {cpu: 500m, memory: 512Mi}
+
+# Redis subchart (Bitnami) đi kèm — tách riêng để giảm blast radius khỏi Redis dùng chung.
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits:   {cpu: 200m, memory: 256Mi}
+
+# Tắt postgres subchart, dùng external postgres trong namespace data.
+postgresql:
+  enabled: false
