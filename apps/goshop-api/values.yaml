@@ -39,6 +39,9 @@ configFile:
     oidc_jwks_url=https://auth.cunghoclaptrinh.online/application/o/goshop/jwks/
     oidc_scopes=openid,email,profile
     frontend_base_url=https://goshop.cunghoclaptrinh.online
+    authentik_api_base: https://auth.cunghoclaptrinh.online
+    authentik_google_source_slug: google
+    authentik_facebook_source_slug:
 externalSecret:
   enabled: false # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
 probes:
