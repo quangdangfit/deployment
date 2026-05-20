@@ -53,20 +53,21 @@ zitadel:
         TLS: true
         ReplyToAddress: noreply@cunghoclaptrinh.online
 
-  # Env override config từ secret zitadel-secrets.
-  env:
-    - name: ZITADEL_DATABASE_POSTGRES_DSN
-      valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_DSN}
-    - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
-      valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
-    - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
-      valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_ADMIN_PASSWORD}
-    - name: ZITADEL_DEFAULTINSTANCE_SMTPCONFIGURATION_SMTP_PASSWORD
-      valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_SMTP_PASSWORD}
+# Env override config từ secret zitadel-secrets.
+# Chart 9.x: env là field top-level (KHÔNG nằm trong zitadel:).
+env:
+  - name: ZITADEL_DATABASE_POSTGRES_DSN
+    valueFrom:
+      secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_DSN}
+  - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
+  - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+    valueFrom:
+      secretKeyRef: {name: zitadel-secrets, key: ZITADEL_ADMIN_PASSWORD}
+  - name: ZITADEL_DEFAULTINSTANCE_SMTPCONFIGURATION_SMTP_PASSWORD
+    valueFrom:
+      secretKeyRef: {name: zitadel-secrets, key: ZITADEL_SMTP_PASSWORD}
 
 ingress:
   enabled: true
