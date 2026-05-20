@@ -21,20 +21,11 @@ zitadel:
       Enabled: false
     Database:
       Postgres:
-        Host: postgres.data.svc.cluster.local
-        Port: 5432
-        Database: zitadel
         MaxOpenConns: 10
         MaxIdleConns: 5
-        User:
-          Username: zitadel
-          SSL:
-            Mode: disable
-        Admin:
-          Username: zitadel
-          ExistingDatabase: zitadel
-          SSL:
-            Mode: disable
+        # DSN mode: ZITADEL_DATABASE_POSTGRES_DSN env override toàn bộ Host/Port/Database/User/Admin.
+        # Format DSN: postgres://zitadel:<pwd>@postgres.data.svc.cluster.local:5432/zitadel?sslmode=disable
+        # Source: docs chart 9.x (DSN mode is recommended).
     FirstInstance:
       Org:
         Name: Goshop
@@ -55,15 +46,11 @@ zitadel:
         TLS: true
         ReplyToAddress: noreply@cunghoclaptrinh.online
 
-  # Bổ sung env mount password từ secret (Zitadel đọc theo cấu trúc
-  # ZITADEL_<PATH>__<TO>__<KEY> tương ứng key trong configmapConfig).
+  # Env override config từ secret zitadel-secrets.
   env:
-    - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
+    - name: ZITADEL_DATABASE_POSTGRES_DSN
       valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
-    - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
-      valueFrom:
-        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_DSN}
     - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
       valueFrom:
         secretKeyRef: {name: zitadel-secrets, key: ZITADEL_ADMIN_PASSWORD}
