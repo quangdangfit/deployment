@@ -6,7 +6,7 @@
 
 **Architecture:** Helm chart `zitadel/zitadel` trong namespace `auth` (dùng lại của Authentik). External Postgres ở `postgres.data.svc.cluster.local` với DB + user riêng `zitadel`. Không cần Redis. Expose qua ingress-nginx tại `auth.cunghoclaptrinh.online` với TLS letsencrypt-prod. Secrets qua Doppler ExternalSecret. ArgoCD app `apps/zitadel` tự sync.
 
-**Tech Stack:** Helm chart `zitadel/zitadel`, ArgoCD Application, ingress-nginx (gRPC backend), cert-manager, External Secrets + Doppler, Postgres 16, Resend SMTP, k3s.
+**Tech Stack:** Helm chart `zitadel/zitadel` 9.34.1 (Zitadel app v4.13.x), ArgoCD Application, ingress-nginx (gRPC backend), cert-manager, External Secrets + Doppler, Postgres 16, Resend SMTP, k3s.
 
 **Spec reference:** `docs/superpowers/specs/2026-05-20-zitadel-goshop-design.md`
 
@@ -357,7 +357,7 @@ spec:
   sources:
     - repoURL: https://charts.zitadel.com
       chart: zitadel
-      targetRevision: 8.6.1
+      targetRevision: 9.34.1
       helm:
         releaseName: zitadel
         valueFiles:
@@ -384,7 +384,9 @@ spec:
       jsonPointers: [/spec/target/deletionPolicy]
 ```
 
-> Verify `targetRevision: 8.6.1` còn là latest stable chart version trước khi commit: `helm search repo zitadel/zitadel --versions | head` (cần `helm repo add zitadel https://charts.zitadel.com && helm repo update` trước). Nếu khác, đổi số trong file.
+> Verify `targetRevision: 9.34.1` còn là latest stable chart version trước khi commit: `helm search repo zitadel/zitadel --versions | head` (cần `helm repo add zitadel https://charts.zitadel.com && helm repo update` trước). Nếu khác, đổi số trong file.
+>
+> Chart 9.x = Zitadel app v4.x. Schema khác chart 8.x (Zitadel v2).
 
 - [ ] **Step 2: Apply Application vào cluster**
 
