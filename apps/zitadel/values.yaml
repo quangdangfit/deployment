@@ -21,11 +21,18 @@ zitadel:
       Enabled: false
     Database:
       Postgres:
+        # User connection: dùng DSN env (ZITADEL_DATABASE_POSTGRES_DSN).
+        # Admin connection: vẫn cần Host/Port/Admin block + env password riêng,
+        # vì DSN env chỉ áp cho User. Init job dùng Admin connection.
+        Host: postgres.data.svc.cluster.local
+        Port: 5432
         MaxOpenConns: 10
         MaxIdleConns: 5
-        # DSN mode: ZITADEL_DATABASE_POSTGRES_DSN env override toàn bộ Host/Port/Database/User/Admin.
-        # Format DSN: postgres://zitadel:<pwd>@postgres.data.svc.cluster.local:5432/zitadel?sslmode=disable
-        # Source: docs chart 9.x (DSN mode is recommended).
+        Admin:
+          Username: zitadel
+          ExistingDatabase: zitadel
+          SSL:
+            Mode: disable
     FirstInstance:
       Org:
         Name: Goshop
@@ -51,6 +58,9 @@ zitadel:
     - name: ZITADEL_DATABASE_POSTGRES_DSN
       valueFrom:
         secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_DSN}
+    - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
     - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
       valueFrom:
         secretKeyRef: {name: zitadel-secrets, key: ZITADEL_ADMIN_PASSWORD}
