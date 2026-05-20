@@ -88,3 +88,21 @@ ingress:
 resources:
   requests: {cpu: 100m, memory: 256Mi}
   limits:   {cpu: 500m, memory: 512Mi}
+
+# Login UI là service tách riêng trong chart 9.x — cần ingress riêng cho path /ui/v2/login.
+login:
+  ingress:
+    enabled: true
+    controller: nginx
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: auth.cunghoclaptrinh.online
+        paths:
+          - path: /ui/v2/login
+            pathType: Prefix
+    tls:
+      - hosts: [auth.cunghoclaptrinh.online]
+        secretName: zitadel-tls
