@@ -2,7 +2,7 @@
 replicaCount: 1
 image:
   repository: ghcr.io/quangdangfit/goshop-web
-  tag: "master-f62b87d"
+  tag: "master-8f2740a"
   pullPolicy: Always
 containerPort: 80
 service:
