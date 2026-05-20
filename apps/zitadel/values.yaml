@@ -1,0 +1,92 @@
+# Helm values for zitadel/zitadel (chart 9.x — app v4.x)
+# Chart: https://charts.zitadel.com
+# Reference: https://zitadel.com/docs/self-hosting/deploy/kubernetes
+#
+# External Postgres (postgres.data.svc.cluster.local), no bundled DB/Redis.
+# TLS terminate ở ingress-nginx (ExternalSecure=true, TLS.Enabled=false).
+# `ingress.controller: nginx` để chart tự inject annotation
+# `nginx.ingress.kubernetes.io/backend-protocol: GRPC` cho h2c.
+
+replicaCount: 1
+
+zitadel:
+  # Masterkey lấy từ secret zitadel-secrets, key ZITADEL_MASTERKEY (32 ký tự).
+  masterkeySecretName: zitadel-secrets
+
+  configmapConfig:
+    ExternalDomain: auth.cunghoclaptrinh.online
+    ExternalPort: 443
+    ExternalSecure: true
+    TLS:
+      Enabled: false
+    Database:
+      Postgres:
+        Host: postgres.data.svc.cluster.local
+        Port: 5432
+        Database: zitadel
+        MaxOpenConns: 10
+        MaxIdleConns: 5
+        User:
+          Username: zitadel
+          SSL:
+            Mode: disable
+        Admin:
+          Username: zitadel
+          ExistingDatabase: zitadel
+          SSL:
+            Mode: disable
+    FirstInstance:
+      Org:
+        Name: Goshop
+        Human:
+          UserName: admin
+          FirstName: Admin
+          LastName: Goshop
+          Email:
+            Address: admin@cunghoclaptrinh.online
+            Verified: true
+    DefaultInstance:
+      SMTPConfiguration:
+        SMTP:
+          Host: smtp.resend.com:465
+          User: resend
+        From: noreply@cunghoclaptrinh.online
+        FromName: Goshop
+        TLS: true
+        ReplyToAddress: noreply@cunghoclaptrinh.online
+
+  # Bổ sung env mount password từ secret (Zitadel đọc theo cấu trúc
+  # ZITADEL_<PATH>__<TO>__<KEY> tương ứng key trong configmapConfig).
+  env:
+    - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
+    - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_DB_PASSWORD}
+    - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_ADMIN_PASSWORD}
+    - name: ZITADEL_DEFAULTINSTANCE_SMTPCONFIGURATION_SMTP_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: zitadel-secrets, key: ZITADEL_SMTP_PASSWORD}
+
+ingress:
+  enabled: true
+  controller: nginx           # auto-inject backend-protocol: GRPC annotation
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: auth.cunghoclaptrinh.online
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts: [auth.cunghoclaptrinh.online]
+      secretName: zitadel-tls
+
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits:   {cpu: 500m, memory: 512Mi}
