@@ -33,11 +33,11 @@ configFile:
     smtp_port=25
     email_from=no-reply@goshop.local
     auth_mode=oidc
-    oidc_issuer=https://auth.cunghoclaptrinh.online/application/o/goshop/
+    oidc_issuer=https://auth.cunghoclaptrinh.online
     oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
     oidc_post_logout_url=https://goshop.cunghoclaptrinh.online/
-    oidc_jwks_url=https://auth.cunghoclaptrinh.online/application/o/goshop/jwks/
-    oidc_scopes=openid,email,profile
+    oidc_jwks_url=https://auth.cunghoclaptrinh.online/oauth/v2/keys
+    oidc_scopes=openid,email,profile,offline_access,urn:zitadel:iam:org:project:roles
     frontend_base_url=https://goshop.cunghoclaptrinh.online
 externalSecret:
   enabled: false # ES được apply riêng từ apps/goshop-api/externalsecret.yaml
