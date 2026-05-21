@@ -32,7 +32,7 @@ configFile:
     smtp_host=
     smtp_port=25
     email_from=no-reply@goshop.local
-    auth_mode=oidc
+    auth_mode=jwt
     oidc_issuer=https://auth.cunghoclaptrinh.online/application/o/goshop/
     oidc_redirect_url=https://goshop.cunghoclaptrinh.online/api/v1/auth/callback
     oidc_post_logout_url=https://goshop.cunghoclaptrinh.online/
