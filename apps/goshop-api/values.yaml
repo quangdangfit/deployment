@@ -2,7 +2,7 @@
 replicaCount: 2
 image:
   repository: ghcr.io/quangdangfit/goshop
-  tag: "master-281586e" # auto-bumped by argocd-image-updater
+  tag: "master-2a6b87c" # auto-bumped by argocd-image-updater
   pullPolicy: Always
 containerPort: 8888
 extraPorts:
