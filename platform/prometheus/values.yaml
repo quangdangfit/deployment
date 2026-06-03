@@ -1,0 +1,63 @@
+# kube-prometheus-stack — Prometheus + Alertmanager + node-exporter + kube-state-metrics.
+# Grafana disabled here; managed separately in platform/grafana so all datasources
+# (Prom, Tempo, ...) live in one chart.
+
+# --- Tuned for k3s single-node ARM64 (Oracle Cloud) ---
+
+grafana:
+  enabled: false
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 10m, memory: 32Mi }
+      limits:   { memory: 128Mi }
+    retention: 120h
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: "10GB"
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+      limits:   { memory: 2Gi }
+    # Pick up ServiceMonitor / PodMonitor from any namespace, not just labeled ones.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
+    limits:   { memory: 64Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits:   { memory: 128Mi }
+
+# k3s exposes most control-plane metrics on the single node — disable scrapes that
+# would fail (no separate kube-controller-manager / scheduler / etcd endpoints).
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false

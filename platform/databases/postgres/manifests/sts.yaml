@@ -54,6 +54,26 @@ spec:
               command: ["pg_isready", "-U", "goshop", "-d", "goshop"]
             initialDelaySeconds: 30
             periodSeconds: 10
+        - name: exporter
+          # Sidecar: postgres_exporter scrape Postgres qua localhost (cùng network ns với DB).
+          # User `postgres_exporter` được tạo bởi Job exporter-user-init-job với role pg_monitor.
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+          ports:
+            - name: metrics
+              containerPort: 9187
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/postgres?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: postgres_exporter
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_EXPORTER_PASSWORD
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits:   { memory: 128Mi }
   volumeClaimTemplates:
     # StatefulSet sinh PVC cho TỪNG replica: data-postgres-0, data-postgres-1, ...
     # PVC được giữ lại khi pod xoá → data persistent.

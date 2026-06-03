@@ -1,0 +1,96 @@
+# Grafana — UI + alerting. Datasources point at the in-cluster
+# Prometheus (from kube-prometheus-stack) and Tempo.
+
+replicas: 1
+
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits:   { memory: 512Mi }
+
+persistence:
+  enabled: true
+  size: 5Gi
+
+# Admin password auto-generated into secret `grafana` (key: admin-password).
+# Retrieve via:
+#   kubectl -n monitoring get secret grafana -o jsonpath='{.data.admin-password}' | base64 -d
+admin:
+  existingSecret: ""
+
+# TLS terminated at ingress-nginx; Grafana itself serves plain HTTP.
+grafana.ini:
+  server:
+    root_url: https://grafana.cunghoclaptrinh.online
+  analytics:
+    reporting_enabled: false
+    check_for_updates: false
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        access: proxy
+        url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc:3200
+        jsonData:
+          tracesToMetrics:
+            datasourceUid: prometheus
+          serviceMap:
+            datasourceUid: prometheus
+          nodeGraph:
+            enabled: true
+
+# Useful starter dashboards from grafana.com.
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    node-exporter:
+      gnetId: 1860
+      revision: 37
+      datasource: Prometheus
+    kubernetes-cluster:
+      gnetId: 7249
+      revision: 1
+      datasource: Prometheus
+    kubernetes-pods:
+      gnetId: 6417
+      revision: 1
+      datasource: Prometheus
+    postgres-overview:
+      gnetId: 9628
+      revision: 7
+      datasource: Prometheus
+    redis-overview:
+      gnetId: 763
+      revision: 6
+      datasource: Prometheus
+
+serviceMonitor:
+  enabled: true
+
+# Ingress defined separately (ingress.yaml) so cert-manager + nginx annotations
+# stay consistent with platform/argocd/ingress.yaml.
+ingress:
+  enabled: false

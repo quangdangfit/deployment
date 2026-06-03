@@ -1,0 +1,17 @@
+# ServiceMonitor: kube-prometheus-stack scrape Postgres exporter qua port `metrics` của Service.
+# Pick up tự động vì prometheus.serviceMonitorSelectorNilUsesHelmValues=false.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: postgres
+  namespace: data
+  labels:
+    app: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

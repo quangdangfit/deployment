@@ -1,0 +1,54 @@
+# Tempo — monolithic single-binary mode with local PVC.
+# Reason: single-node k3s, no object storage yet. When we move to multi-node
+# or add S3, switch to chart `tempo-distributed` (or scalable) with S3 backend.
+
+tempo:
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits:   { memory: 1Gi }
+  retention: 168h  # 7 days
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+persistence:
+  enabled: true
+  accessModes: ["ReadWriteOnce"]
+  size: 10Gi
+
+# Receivers — accept OTLP (gRPC + HTTP). Apps push traces here via OpenTelemetry SDK.
+config: |
+  multitenancy_enabled: false
+  usage_report:
+    reporting_enabled: false
+  compactor:
+    compaction:
+      block_retention: 168h
+  distributor:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+  ingester:
+    max_block_duration: 5m
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+# Expose OTLP receiver ports on the Service so other namespaces can push traces.
+service:
+  type: ClusterIP
+
+serviceMonitor:
+  enabled: true

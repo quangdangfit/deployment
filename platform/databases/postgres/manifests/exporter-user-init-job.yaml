@@ -1,0 +1,54 @@
+# One-shot Job: tạo user `postgres_exporter` với role `pg_monitor` (least-privilege).
+# Idempotent — chạy lại được nhiều lần (DO block check rolname trước khi CREATE).
+# Password lấy từ Doppler qua ExternalSecret `postgres-credentials`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-exporter-user-init
+  namespace: data
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql
+          image: postgres:16-alpine
+          env:
+            - name: PGHOST
+              value: postgres.data.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: postgres
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef: { name: postgres-credentials, key: POSTGRES_USER }
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD }
+            - name: EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: postgres-credentials, key: POSTGRES_EXPORTER_PASSWORD }
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              # Đợi DB sẵn sàng (Job có thể chạy trước khi sts ready).
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do
+                echo "waiting for postgres..."; sleep 2
+              done
+              psql -v ON_ERROR_STOP=1 <<SQL
+              DO \$\$
+              BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres_exporter') THEN
+                  CREATE USER postgres_exporter WITH PASSWORD '${EXPORTER_PASSWORD}';
+                ELSE
+                  ALTER USER postgres_exporter WITH PASSWORD '${EXPORTER_PASSWORD}';
+                END IF;
+              END
+              \$\$;
+              GRANT pg_monitor TO postgres_exporter;
+              SQL
